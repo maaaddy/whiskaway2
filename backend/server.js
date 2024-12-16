@@ -27,7 +27,7 @@ app.get('/recipes', async (_req, res) => {
   } 
   catch (err) {
       console.error("Error:", err);
-      res.status(500).send("Hmmm, something smells... No data for you!");
+      res.status(500).send("No data for you!");
   }
 });
 
