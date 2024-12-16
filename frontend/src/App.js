@@ -1,14 +1,23 @@
-// client/src/App.js
-
 import React from 'react';
 import './App.css';
-import HomePage from './components/HomePage';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import HomePage from './components/HomePage/HomePage';
+import SearchPage from './components/SearchPage/SearchPage';
+import MessagePage from './components/MessagePage/MessagePage';
+import RecipeBooksPage from './components/RecipeBooksPage/RecipeBooksPage';
+import BottomNav from './components/BottomNav/BottomNav';
 
 function App() {
     return (
-        <div className="App">
-            <HomePage />
-        </div>
+        <BrowserRouter>
+            <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/search" element={<SearchPage />} />
+                <Route path="/messages" element={<MessagePage />} />
+                <Route path="/recipe-books" element={<RecipeBooksPage />} />
+            </Routes>
+            <BottomNav />
+        </BrowserRouter>
     );
 }
 

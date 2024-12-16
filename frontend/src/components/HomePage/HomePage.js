@@ -1,7 +1,6 @@
-// client/src/components/HomePage.js
-
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import BottomNav from '../BottomNav/BottomNav';
 
 function HomePage() {
     const [recipes, setRecipes] = useState([]);
@@ -33,6 +32,8 @@ function HomePage() {
                     ))
                 )}
             </div>
+
+            <BottomNav />
         </div>
     );
 }
