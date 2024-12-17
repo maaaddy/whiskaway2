@@ -13,10 +13,6 @@ function HomePage() {
 
     return (
         <div className="home-page">
-            <header>
-                <h1>Welcome to Whisk Away</h1>
-                <p>Browse through a variety of recipes and get inspired!</p>
-            </header>
             
             <div className="recipe-list">
                 {recipes.length === 0 ? (
