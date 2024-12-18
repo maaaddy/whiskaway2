@@ -1,35 +1,52 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import BottomNav from '../BottomNav/BottomNav';
+import { Link } from 'react-router-dom';
 
-function HomePage() {
+function HomePage({ searchQuery }) {
     const [recipes, setRecipes] = useState([]);
+    const API_KEY = 'bbed8c1e97b747cc8467631cd9c308b2';
 
     useEffect(() => {
-        axios.get('http://localhost:5000/recipes')
-            .then(response => setRecipes(response.data))
-            .catch(err => console.error('Error fetching recipes:', err));
-    }, []);
+        const fetchRecipes = async () => {
+            try {
+                const response = await axios.get('https://api.spoonacular.com/recipes/complexSearch', {
+                    params: {
+                        apiKey: API_KEY,
+                        number: 10,
+                        query: searchQuery,
+                    },
+                });
+                setRecipes(response.data.results);
+            } 
+            
+            catch (err) {
+                console.error('Error fetching recipes:', err);
+            }
+        };
+
+        fetchRecipes();
+    }, [searchQuery]);
 
     return (
-        <div className="home-page">
-            
+        <div className="homepage pb-20">
             <div className="recipe-list">
-                {recipes.length === 0 ? (
-                    <p>No recipes available</p>
-                ) : (
-                    recipes.map(recipe => (
-                        <div key={recipe._id} className="recipe-card">
-                            <h2>{recipe.title}</h2>
-                            <img src={recipe.image} alt={recipe.title} />
-                            <p>Ingredients: {recipe.ingredients.join(', ')}</p>
-                            <p>{recipe.instructions}</p>
+                {recipes.length > 0 ? (
+                    recipes.map((recipe) => (
+                        <div key={recipe.id} className="recipe-card">
+                            <Link to={`/recipe/${recipe.id}`}>
+                                <img
+                                    src={recipe.image}
+                                    alt={recipe.title}
+                                    className="recipe-image"
+                                />
+                                <h3>{recipe.title}</h3>
+                            </Link>
                         </div>
                     ))
+                ) : (
+                    <p>No recipes found. Try searching for something else!</p>
                 )}
             </div>
-
-            <BottomNav />
         </div>
     );
 }

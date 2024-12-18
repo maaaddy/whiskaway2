@@ -9,8 +9,8 @@ function BottomNav() {
             <Link to="/">
                 <FontAwesomeIcon icon={faHome} /> Home
             </Link>
-            <Link to="/search">
-                <FontAwesomeIcon icon={faSearch} /> Search
+            <Link to="/add-recipe">
+                <FontAwesomeIcon icon={faSearch} /> Create
             </Link>
             <Link to="/recipe-books">
                 <FontAwesomeIcon icon={faBook} /> Recipe Books
