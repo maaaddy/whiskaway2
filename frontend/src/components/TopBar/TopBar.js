@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faInfoCircle, faCog, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 
+<<<<<<< Updated upstream
 function TopBar() {
 
     const [recipes, setRecipes] = useState([]);
@@ -17,6 +18,11 @@ function TopBar() {
     const [searchQuery, setSearchQuery] = useState('');
     const [filteredRecipes, setFilteredRecipes] = useState(recipes);
     const location = useLocation();
+=======
+function TopBar({ searchQuery, setSearchQuery, onLogout }) {
+    const location = useLocation();
+    const showSearchBar = location.pathname === '/home';
+>>>>>>> Stashed changes
 
     const handleSearchChange = (e) => {
         const query = e.target.value.toLowerCase();
@@ -36,7 +42,12 @@ function TopBar() {
     return (
         <div className="top-bar">
             <div className="logo">
+<<<<<<< Updated upstream
                 <h1>|||| WhiskAway</h1>
+=======
+                <img src="/logo.png" alt="Logo" className="w-12 h-auto" />
+                <span className="text-xl text-gray-700 font-bold">WhiskAway</span>
+>>>>>>> Stashed changes
             </div>
 
             {showSearchBar && (
@@ -59,9 +70,9 @@ function TopBar() {
                 <Link to="/settings">
                     <FontAwesomeIcon icon={faCog} />
                 </Link>
-                <Link to="/logout" className="text-white hover:text-gray-200">
+                <a href="/" onClick={onLogout} className="text-gray-700 hover:text-blue-500">
                     <FontAwesomeIcon icon={faSignOutAlt} />
-                </Link>
+                </a>
             </div>
 
             {showSearchBar && searchQuery && (
