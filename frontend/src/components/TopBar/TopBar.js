@@ -3,9 +3,9 @@ import { Link, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faInfoCircle, faCog, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 
-function TopBar({ searchQuery, setSearchQuery }) {
+function TopBar({ searchQuery, setSearchQuery, onLogout }) {
     const location = useLocation();
-    const showSearchBar = location.pathname === '/';
+    const showSearchBar = location.pathname === '/home';
 
     const handleSearchChange = (e) => {
         setSearchQuery(e.target.value);
@@ -15,7 +15,7 @@ function TopBar({ searchQuery, setSearchQuery }) {
         <div className="top-bar">
             <div className="logo">
                 <img src="/logo.png" alt="Logo" className="w-12 h-auto" />
-                <span className="text-xl font-bold">WhiskAway</span>
+                <span className="text-xl text-gray-700 font-bold">WhiskAway</span>
             </div>
 
             {showSearchBar && (
@@ -38,9 +38,9 @@ function TopBar({ searchQuery, setSearchQuery }) {
                 <Link to="/settings">
                     <FontAwesomeIcon icon={faCog} />
                 </Link>
-                <Link to="/logout" className="text-white hover:text-gray-200">
+                <a href="/" onClick={onLogout} className="text-gray-700 hover:text-blue-500">
                     <FontAwesomeIcon icon={faSignOutAlt} />
-                </Link>
+                </a>
             </div>
         </div>
     );
