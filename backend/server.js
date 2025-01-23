@@ -6,6 +6,8 @@ const User = require('./models/User');
 const {hashPassword, comparePassword} = require('./helpers/auth')
 const Recipe = require('./models/Recipe');
 const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
+
 
 dotenv.config();
 
@@ -22,6 +24,7 @@ app.use(cors({
   credentials: true,
   origin: process.env.CLIENT_URL,
 }));
+app.use(cookieParser());
 
 const PORT = 5000;
 // End Set Up -----------------------------------------------------------
@@ -82,6 +85,7 @@ app.delete('/recipe/delete', async (req, res) => {
     }
 });
 
+// Login/User Stuff ---------------------------------------------------------
 app.post('/register', async (req, res) => {
   try {
       const {username, password} = req.body;
@@ -98,7 +102,10 @@ app.post('/register', async (req, res) => {
       };
       const hashedPassword = await hashPassword(password)
       const user = await User.create({username, password:hashedPassword})
-      return res.json(user)
+      jwt.sign({username: user.username, id: user._id},process.env.JWT_SECRET, {}, (err, token) => {
+        if(err) throw err;
+        res.cookie('token', token).json(user)
+      });
   } catch (error){
       console.log(error)
   }
@@ -109,9 +116,9 @@ app.post('/login', async (req, res) => {
       const {username, password} = req.body;
       const user = await User.findOne({username});
       if(!user){
-          return res.json({
-              error: 'No user found'
-          });
+        return res.json({
+          error: 'No user found'
+        });
       }
       const match = await comparePassword(password, user.password);
       if(!match){
@@ -125,8 +132,13 @@ app.post('/login', async (req, res) => {
           });
       }
   } catch (error) {
-      console.log(error);
+    console.log(error);
   }
+});
+
+app.post('/logout', (req, res) => {
+  res.clearCookie('token');
+  res.json({ message: 'Logged out successfully' });
 });
 
 app.get('/profile', async (req, res) => {
@@ -134,8 +146,8 @@ app.get('/profile', async (req, res) => {
   const {token} = req.cookies;
   if(token){
     jwt.verify(token,process.env.JWT_SECRET, {}, (err, user) => {
-        if(err) throw err;
-        res.json(user)
+      if(err) throw err;
+      res.json(user)
     });
   } else {
       res.json(null);

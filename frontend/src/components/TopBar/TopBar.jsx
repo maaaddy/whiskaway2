@@ -5,10 +5,15 @@ import { faSearch, faInfoCircle, faCog, faSignOutAlt } from '@fortawesome/free-s
 
 function TopBar({ searchQuery, setSearchQuery, onLogout }) {
     const location = useLocation();
-    const showSearchBar = location.pathname === '/home';
+    const showSearchBar = location.pathname === '/';
 
     const handleSearchChange = (e) => {
         setSearchQuery(e.target.value);
+    };
+
+    const handleLogoutClick = (e) => {
+        e.preventDefault();
+        onLogout();
     };
 
     return (
@@ -38,7 +43,7 @@ function TopBar({ searchQuery, setSearchQuery, onLogout }) {
                 <Link to="/settings">
                     <FontAwesomeIcon icon={faCog} />
                 </Link>
-                <a href="/" onClick={onLogout} className="text-gray-700 hover:text-blue-500">
+                <a href="/" onClick={handleLogoutClick} className="text-gray-700 hover:text-blue-500">
                     <FontAwesomeIcon icon={faSignOutAlt} />
                 </a>
             </div>
