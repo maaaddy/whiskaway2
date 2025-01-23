@@ -18,7 +18,7 @@ function GetStarted() {
             <div className="button-container">
                 <button onClick={handleSignUp} className="sign-up-button">
                     Sign Up
-                </button><br></br>
+                </button>
                 <button onClick={handleLogin} className="login-button">
                     Log In
                 </button>

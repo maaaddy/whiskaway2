@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from "react-router-dom";
 import axios from 'axios';
 
-function SignUp() {
+function SignUp({ onSignUp }) {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
@@ -16,6 +16,8 @@ function SignUp() {
             } else {
                 setUsername('');
                 setPassword('');
+                localStorage.setItem('token', data.token);
+                onSignUp();
                 navigate('/home');
             }
         } catch (error) {
