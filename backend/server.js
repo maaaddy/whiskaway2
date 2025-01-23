@@ -1,82 +1,146 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
-const { MongoClient } = require('mongodb');
-const path = require('path');
+const User = require('./models/User');
+const {hashPassword, comparePassword} = require('./helpers/auth')
+const Recipe = require('./models/Recipe');
+const jwt = require('jsonwebtoken');
 
-dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
-const url = process.env.MONGO_DB_URL;
-const dbName = process.env.MONGO_DB;
-const collectionName1 = process.env.MONGO_DB_COLLECTION1;
-const collectionName2 = process.env.MONGO_DB_COLLECTION2;
+dotenv.config();
+
+mongoose.connect(process.env.MONGO_URL)
+  .then(() => {
+    console.log("connection successful")
+  }).catch((err) => {
+    console.log("connection unsuccessful", err)
+  });
 
 const app = express();
-app.use(cors());
 app.use(express.json());
+app.use(cors({
+  credentials: true,
+  origin: process.env.CLIENT_URL,
+}));
+
 const PORT = 5000;
+// End Set Up -----------------------------------------------------------
 
-app.get('/recipes', async (_req, res) => {
+app.get('/test', (_req, res) => {
+  res.json('Test successful.');
+});
+
+// Recipe Stuff ---------------------------------------------------------
+app.post('/recipes', async (req, res) => {
+  const{title, servings} = req.body;
+  const newRecipe = await Recipe.create({title, servings}); 
+  console.log(req);
+  res.json(newRecipe);
+});
+
+app.get('/findrecipes', async (_req, res) => {
   try {
-      const client = await MongoClient.connect(url);
-      const db = client.db(dbName);
-      const collection = db.collection(collectionName1);
-      const recipeInfo = await collection.find({}).toArray();
-      
-      await client.close();
-
+      const recipeInfo = await Recipe.find({}, { _id: 1, title: 1, servings: 1});
       res.json(recipeInfo);
-  } 
-  catch (err) {
+  } catch (err) {
       console.error("Error:", err);
-      res.status(500).send("No data for you!");
+      res.status(500).send("No data here!");
   }
 });
 
-app.get('/users', async (_req, res) => {
+app.put('/recipe/update', async (req, res) => {
   try {
-      const client = await MongoClient.connect(url);
-      const db = client.db(dbName);
-      const collection = db.collection(collectionName2);
-      const userInfo = await collection.find({}).toArray();
-      
-      await client.close();
+    const { title, servings, _id } = req.body;
+    console.log("Received Update Request:", req.body);
 
-      res.json(userInfo);
-  } 
-  catch (err) {
-      console.error("Error:", err);
-      res.status(500).send("No data for you!");
+    const recipe = await Recipe.findById(_id);
+    if (recipe) {
+      recipe.title = title;
+      recipe.servings = servings;
+      const updatedRecipe = await recipe.save();
+      res.json(updatedRecipe);
+    } else {
+      res.status(404).send("No recipe found");
+    }
+  } catch (err) {
+    console.error("Error in /recipe/update:", err);
+    res.status(500).send("Update unsuccessful");
+  }
+});
+
+app.delete('/recipe/delete', async (req, res) => {
+    try {
+        const { _id } = req.query;
+        if (!_id) {
+            return res.status(400).send({ message: 'Recipe ID is required' });
+        }
+        await Recipe.deleteOne({ _id });
+        res.status(200).send({ message: 'Recipe deleted successfully' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: 'Error deleting recipe' });
+    }
+});
+
+app.post('/register', async (req, res) => {
+  try {
+      const {username, password} = req.body;
+      if(!username){
+        return res.json({
+          error: 'Username required'
+        });
+      };
+
+      if(!password || password.length < 6){
+        return res.json({
+          error: 'Password required and should be at least 6 characters long'
+        });
+      };
+      const hashedPassword = await hashPassword(password)
+      const user = await User.create({username, password:hashedPassword})
+      return res.json(user)
+  } catch (error){
+      console.log(error)
   }
 });
 
 app.post('/login', async (req, res) => {
-  const { username, password } = req.body;
-
   try {
-    const client = await MongoClient.connect(url);
-    const db = client.db(dbName);
-    const collection = db.collection(collectionName2);
-
-    const user = await collection.findOne({ username });
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    if (password !== user.password) {
-      return res.status(401).json({ message: 'Invalid password' });
-    }
-
-    await client.close();
-    res.status(200).json({ message: 'Login successful' });
-    
-  } 
-  catch (err) {
-    console.error("Error:", err);
-    res.status(500).send("No data for you!");
+      const {username, password} = req.body;
+      const user = await User.findOne({username});
+      if(!user){
+          return res.json({
+              error: 'No user found'
+          });
+      }
+      const match = await comparePassword(password, user.password);
+      if(!match){
+        return res.json({
+          error: 'Incorrect credentials.'
+        });
+      } else {
+          jwt.sign({username: user.username, id: user._id},process.env.JWT_SECRET, {}, (err, token) => {
+            if(err) throw err;
+            res.cookie('token', token).json(user)
+          });
+      }
+  } catch (error) {
+      console.log(error);
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+app.get('/profile', async (req, res) => {
+
+  const {token} = req.cookies;
+  if(token){
+    jwt.verify(token,process.env.JWT_SECRET, {}, (err, user) => {
+        if(err) throw err;
+        res.json(user)
+    });
+  } else {
+      res.json(null);
+  }
 });
+
+// Port that we're listening on -----------------------------------------
+const server = app.listen(5000);

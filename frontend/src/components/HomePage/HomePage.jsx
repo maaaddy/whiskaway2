@@ -17,9 +17,7 @@ function HomePage({ searchQuery }) {
                     },
                 });
                 setRecipes(response.data.results);
-            } 
-            
-            catch (err) {
+            } catch (err) {
                 console.error('Error fetching recipes:', err);
             }
         };

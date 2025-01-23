@@ -1,14 +1,26 @@
-// client/src/components/User/SignUp.js
 import React, { useState } from 'react';
+import { Link, useNavigate } from "react-router-dom";
+import axios from 'axios';
 
-function SignUp({ onSignUp }) {
-    const [user, setUser] = useState('');
+function SignUp() {
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Login submitted:', { user, password });
-        onSignUp();
+        try {
+            const { data } = await axios.post('/register', { username, password });
+            if (data.error) {
+                console.log(data.error);
+            } else {
+                setUsername('');
+                setPassword('');
+                navigate('/home');
+            }
+        } catch (error) {
+            console.error('Error signing up:', error);
+        }
     };
 
     return (
@@ -16,13 +28,13 @@ function SignUp({ onSignUp }) {
             <h1>Sign Up</h1>
             <form onSubmit={handleSubmit} className="sign-up-form">
                 <div className="form-group">
-                    <label htmlFor="user">Email/Username:</label>
+                    <label htmlFor="user">Username:</label>
                     <input
                         type="text"
-                        id="user"
-                        placeholder="Email/Username"
-                        value={user}
-                        onChange={(e) => setUser(e.target.value)}
+                        id="username"
+                        placeholder="Username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
                         required
                     />
                 </div>
@@ -40,6 +52,10 @@ function SignUp({ onSignUp }) {
                 <button type="submit" className="sign-up-button">
                     Sign Up
                 </button>
+                <div>Don't have an account?</div>
+                <Link to="/login">
+                    Log in
+                </Link>
             </form>
         </div>
     );
