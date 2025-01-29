@@ -6,8 +6,13 @@ import { faSearch, faInfoCircle, faCog, faSignOutAlt } from '@fortawesome/free-s
 function TopBar({ searchQuery, setSearchQuery, onLogout }) {
     const location = useLocation();
     const showSearchBar = location.pathname === '/';
+    const showCookbookSearch = location.pathname === '/profile';
 
     const handleSearchChange = (e) => {
+        setSearchQuery(e.target.value);
+    };
+
+    const handleCookbookChange = (e) => {
         setSearchQuery(e.target.value);
     };
 
@@ -30,6 +35,19 @@ function TopBar({ searchQuery, setSearchQuery, onLogout }) {
                         placeholder="Search recipes..."
                         value={searchQuery}
                         onChange={handleSearchChange}
+                        className="search-input"
+                    />
+                    <FontAwesomeIcon icon={faSearch} className="search-icon" />
+                </div>
+            )}
+
+            {showCookbookSearch && (
+                <div className="search-container">
+                    <input
+                        type="text"
+                        placeholder="Search Your Cookbooks..."
+                        value={searchQuery}
+                        onChange={handleCookbookChange}
                         className="search-input"
                     />
                     <FontAwesomeIcon icon={faSearch} className="search-icon" />

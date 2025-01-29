@@ -142,7 +142,6 @@ app.post('/logout', (req, res) => {
 });
 
 app.get('/profile', async (req, res) => {
-
   const {token} = req.cookies;
   if(token){
     jwt.verify(token,process.env.JWT_SECRET, {}, (err, user) => {
