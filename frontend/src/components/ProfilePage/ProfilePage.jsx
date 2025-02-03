@@ -36,9 +36,6 @@ function ProfilePage() {
         }
     };
 
-    // Anything I need to assign for the profile will go here after the userData gets pulled.
-    // So friends, bio, fName, lName, etc.
-
     if (loading) return <p>Loading...</p>;
     if (error) return <p>{error}</p>;
     if (!userData) return <p>No user data found. Please log in.</p>;
@@ -66,12 +63,13 @@ function ProfilePage() {
                 </div>
 
                 <div className="profile-details text-center">  
-                    <span className='font-semibold text-2xl'>{userData.fName}Madison Conway</span>
+                    <span className='font-semibold text-2xl'>{userData.fName} {userData.lName}</span>
                     <p className="flex items-center justify-center gap-2 pt-2">
                         <img src="/logo.png" alt="Logo" className="w-6 h-6 object-contain" /> 
                         <span className="text-sm font-medium">{userData.username}</span>
                     </p>
-                    <p>{userData.friends} friends</p>
+                    <p>{userData.friends?.length || 0} friends</p>
+                    <p className='bio-section'>{userData.bio}</p>
                     <div className="flex justify-center gap-4 mt-4">
                         <button className="bg-blue-200 rounded-full px-4 py-2 font-semibold">Share</button>
                         <button className="bg-blue-200 rounded-full px-4 py-2 font-semibold">Edit profile</button>

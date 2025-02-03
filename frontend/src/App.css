@@ -108,3 +108,7 @@ h1 {
 .cookbook-profile {
  @apply text-center;
 }
+
+.bio-section {
+  @apply mt-3 mb-5;
+}

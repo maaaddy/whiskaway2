@@ -168,16 +168,24 @@ app.post('/logout', (req, res) => {
 });
 
 app.get('/profile', async (req, res) => {
-  const {token} = req.cookies;
-  if(token){
-    jwt.verify(token,process.env.JWT_SECRET, {}, (err, user) => {
-      if(err) throw err;
-      res.json(user)
-    });
-  } else {
-      res.json(null);
+  const { token } = req.cookies;
+  if (!token) {
+    return res.json(null);
   }
-  //Need to do a userInfo request here to get the actual user info to display on the profile
+
+  jwt.verify(token, process.env.JWT_SECRET, {}, async (err, decodedUser) => {
+    if (err) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+
+    try {
+      const user = await User.findById(decodedUser.id).select('-password');
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      res.status(500).json({ error: "Failed to fetch user data" });
+    }
+  });
 });
 
 // Port that we're listening on -----------------------------------------
