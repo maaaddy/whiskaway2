@@ -3,6 +3,7 @@ import './App.css';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from './components/HomePage/HomePage';
 import CreatePage from './components/CreatePage/CreatePage';
+import About from './components/About';
 import MessagePage from './components/MessagePage/MessagePage';
 import RecipeBooksPage from './components/RecipeBooksPage/RecipeBooksPage';
 import BottomNav from './components/BottomNav/BottomNav';
@@ -51,6 +52,7 @@ function App() {
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="/messages" element={<MessagePage />} />
                         <Route path="/recipe-books" element={<RecipeBooksPage />} />
+                        <Route path="/about" element={<About />} />
                         <Route path="*" element={<Navigate to="/" />} />
                     </>
                 ) : (

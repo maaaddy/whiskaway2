@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 function ProfilePage() {
-    const [userData, setUserData] = useState(null);
+    const [userData, setUserData] = useState();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     
@@ -36,6 +36,9 @@ function ProfilePage() {
         }
     };
 
+    // Anything I need to assign for the profile will go here after the userData gets pulled.
+    // So friends, bio, fName, lName, etc.
+
     if (loading) return <p>Loading...</p>;
     if (error) return <p>{error}</p>;
     if (!userData) return <p>No user data found. Please log in.</p>;
@@ -44,6 +47,7 @@ function ProfilePage() {
         <div className="profile-line">
             <div className="profile-page">
                 <div className="relative inline-block">
+                {userData[3]}
                     <input
                         type="file"
                         id="profile-pic-input"
@@ -51,7 +55,7 @@ function ProfilePage() {
                         accept="image/*"
                         onChange={previewProfilePic}
                     />
-                    <label htmlFor="profile-pic-input" className="block w-36 h-36 rounded-full overflow-hidden border border-black mb-4">
+                    <label htmlFor="profile-pic-input" className="block w-36 h-36 rounded-full overflow-hidden border border-black mb-1">
                         <img
                             id="profile-pic-preview"
                             src={userData.profilePic || "#"}
@@ -62,15 +66,15 @@ function ProfilePage() {
                 </div>
 
                 <div className="profile-details text-center">  
-                    <span className='font-semibold text-xl'>{userData.fName}Madison Conway</span>
+                    <span className='font-semibold text-2xl'>{userData.fName}Madison Conway</span>
                     <p className="flex items-center justify-center gap-2 pt-2">
-                        <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" /> 
-                        <span className="text-lg font-medium">{userData.username}</span>
+                        <img src="/logo.png" alt="Logo" className="w-6 h-6 object-contain" /> 
+                        <span className="text-sm font-medium">{userData.username}</span>
                     </p>
-                    <p>{userData.friends}13 friends</p>
+                    <p>{userData.friends} friends</p>
                     <div className="flex justify-center gap-4 mt-4">
-                        <button className="bg-blue-200 border border-black rounded-full px-4 py-2">Share</button>
-                        <button className="bg-blue-200 border border-black rounded-full px-4 py-2">Edit profile</button>
+                        <button className="bg-blue-200 rounded-full px-4 py-2 font-semibold">Share</button>
+                        <button className="bg-blue-200 rounded-full px-4 py-2 font-semibold">Edit profile</button>
                     </div>
                 </div>
             </div>

@@ -88,26 +88,52 @@ app.delete('/recipe/delete', async (req, res) => {
 // Login/User Stuff ---------------------------------------------------------
 app.post('/register', async (req, res) => {
   try {
-      const {username, password} = req.body;
-      if(!username){
-        return res.json({
-          error: 'Username required'
-        });
-      };
-
-      if(!password || password.length < 6){
-        return res.json({
-          error: 'Password required and should be at least 6 characters long'
-        });
-      };
-      const hashedPassword = await hashPassword(password)
-      const user = await User.create({username, password:hashedPassword})
-      jwt.sign({username: user.username, id: user._id},process.env.JWT_SECRET, {}, (err, token) => {
-        if(err) throw err;
-        res.cookie('token', token).json(user)
+    const { username, password, fName, lName, bio } = req.body;
+    if (!username) {
+      return res.json({
+        error: 'Username required',
       });
-  } catch (error){
-      console.log(error)
+    }
+    if (!password || password.length < 6) {
+      return res.json({
+        error: 'Password required and should be at least 6 characters long',
+      });
+    }
+
+    const hashedPassword = await hashPassword(password);
+    const user = await User.create({
+      username,
+      password: hashedPassword,
+      fName,
+      lName,
+      bio,
+      friends: [],
+    });
+
+    jwt.sign(
+      { username: user.username, id: user._id },
+      process.env.JWT_SECRET,
+      {},
+      (err, token) => {
+        if (err) {
+          return res.status(500).json({ error: 'Internal server error' });
+        }
+        res
+          .cookie('token', token, { httpOnly: true })
+          .status(201)
+          .json({
+            id: user._id,
+            username: user.username,
+            fName: user.fName,
+            lName: user.lName,
+            bio: user.bio,
+            friends: user.friends,
+          });
+      }
+    );
+  } catch (error) {
+    console.error('Registration Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -151,6 +177,7 @@ app.get('/profile', async (req, res) => {
   } else {
       res.json(null);
   }
+  //Need to do a userInfo request here to get the actual user info to display on the profile
 });
 
 // Port that we're listening on -----------------------------------------
