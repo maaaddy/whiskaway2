@@ -73,7 +73,7 @@ h1 {
 }
 
 .logo-text {
-  @apply text-2xl font-bold text-gray-800;
+  @apply text-2xl font-bold;
 }
 
 
@@ -82,7 +82,7 @@ h1 {
 }
 
 .search-input {
-  @apply w-full p-2.5 pl-9 pr-6 border border-gray-300 rounded-2xl text-base;
+  @apply w-full p-2.5 pl-9 pr-6 border border-gray-200 rounded-3xl text-base bg-gray-100;
 }
 
 .search-icon {
