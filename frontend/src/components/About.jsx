@@ -19,7 +19,7 @@ function About() {
             <p>fName</p>
             <p>lName</p>
             <p>Profile Picture saving & displaying</p>
-            <p>bio</p>
+            <p>bio and bio character limit</p>
             <p>friends</p>
             <br></br>
             <div className='bg-gray-200'>
