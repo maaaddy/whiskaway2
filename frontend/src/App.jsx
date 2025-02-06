@@ -12,6 +12,7 @@ import RecipeDetailPage from './components/RecipeDetailPage/RecipeDetailPage';
 import TopBar from './components/TopBar/TopBar';
 import SignUp from './components/User/SignUp';
 import Login from './components/User/Login';
+import Registration from './components/User/Registration';
 import GetStarted from './components/User/GetStarted';
 import axios from 'axios';
 
