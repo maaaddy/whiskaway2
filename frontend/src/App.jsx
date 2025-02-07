@@ -12,6 +12,7 @@ import RecipeDetailPage from './components/RecipeDetailPage/RecipeDetailPage';
 import TopBar from './components/TopBar/TopBar';
 import SignUp from './components/User/SignUp';
 import Login from './components/User/Login';
+import Register from './components/User/Register';
 import GetStarted from './components/User/GetStarted';
 import axios from 'axios';
 
@@ -58,6 +59,7 @@ function App() {
                 ) : (
                     <>
                         <Route path="/" element={isLoggedIn ? <Navigate to="/home" /> : <GetStarted />} />
+                        <Route path="/register" element={<Register />} />
                         <Route path="/login" element={<Login onLogin={handleLogin} />} />
                         <Route path="/signup" element={<SignUp onSignUp={handleLogin} />} />
                         <Route path="*" element={<GetStarted />} />

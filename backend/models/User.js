@@ -18,7 +18,7 @@ const UserSchema = new mongoose.Schema({
     },
     fName: {
         type: String,
-        required: true, //I want all users to have a first name so it displays on the profile. 
+        required: true,
     },
     lName: {
         type: String,

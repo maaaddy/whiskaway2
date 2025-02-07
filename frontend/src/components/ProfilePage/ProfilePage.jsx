@@ -44,7 +44,6 @@ function ProfilePage() {
         <div className="profile-line">
             <div className="profile-page">
                 <div className="relative inline-block">
-                {userData[3]}
                     <input
                         type="file"
                         id="profile-pic-input"
