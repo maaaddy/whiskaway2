@@ -17,6 +17,11 @@ h1 {
   @apply text-4xl font-bold;
 }
 
+/* Background Color to match cover photo :) --------------- */
+.back {
+  @apply bg-[#dfeef2] min-h-screen w-full py-20;
+}
+
 /* Recipe List Styling -------------------------------------*/
 .recipe-list {
   @apply flex flex-wrap justify-center gap-6 p-4;
@@ -47,7 +52,7 @@ h1 {
 
 /* Bottom Navigation Bar Styling -------------------------------------*/
 .bottom-nav {
-  @apply flex justify-around p-2 bg-gray-100 border-t border-gray-300 fixed bottom-0 w-full;
+  @apply flex justify-around p-4 bg-[#ebf6f7] border-t border-gray-200 fixed bottom-0 w-full;
 }
 
 .bottom-nav a {
@@ -86,11 +91,11 @@ h1 {
 }
 
 .search-icon {
-  @apply absolute top-1/2 left-3 transform -translate-y-1/2 text-gray-400 text-lg;
+  @apply absolute top-1/2 left-3 transform -translate-y-1/2 text-teal-700 text-lg;
 }
 
 .icons a {
-  @apply ml-5 text-lg text-gray-700 hover:text-blue-500;
+  @apply ml-5 text-lg text-teal-700 hover:text-teal-500;
 }
 
 /* Login Stuff -------------------------------------*/

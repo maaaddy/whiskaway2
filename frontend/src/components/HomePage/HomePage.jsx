@@ -26,7 +26,7 @@ function HomePage({ searchQuery }) {
     }, [searchQuery]);
 
     return (
-        <div className="homepage pb-20">
+        <div className="homepage back">
             <div className="recipe-list">
                 {recipes.length > 0 ? (
                     recipes.map((recipe) => (

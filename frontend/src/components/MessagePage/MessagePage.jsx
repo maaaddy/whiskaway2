@@ -29,7 +29,7 @@ function MessagePage() {
         }
     };
     return (
-        <div className="sign-up">
+        <div className="sign-up back">
             <h3>Registration</h3>
             <p>Tell us about yourself! This will be displayed on your profile.</p> 
             <form onSubmit={handleSubmit} className="sign-up-form mt-5">

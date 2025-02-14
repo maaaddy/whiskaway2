@@ -41,7 +41,7 @@ function ProfilePage() {
     if (!userData) return <p>No user data found. Please log in.</p>;
 
     return (
-        <div className="profile-line">
+        <div className="profile-line back">
             <div className="profile-page">
                 <div className="relative inline-block">
                     <input
