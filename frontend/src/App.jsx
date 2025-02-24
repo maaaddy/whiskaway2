@@ -18,6 +18,7 @@ import axios from 'axios';
 
 function App() {
     const [searchQuery, setSearchQuery] = useState('');
+    const [recipeFilter, setRecipeFilter] = useState("all");
     const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     useEffect(() => {
@@ -43,11 +44,11 @@ function App() {
 
     return (
         <BrowserRouter>
-            {isLoggedIn && <TopBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} onLogout={handleLogout} />}
+            {isLoggedIn && <TopBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} setRecipeFilter={setRecipeFilter} onLogout={handleLogout} />}
             <Routes>
                 {isLoggedIn ? ( 
                     <>
-                        <Route path="/" element={<HomePage searchQuery={searchQuery} />} />
+                        <Route path="/" element={<HomePage searchQuery={searchQuery} recipeFilter={recipeFilter} />} />
                         <Route path="/recipe/:id" element={<RecipeDetailPage />} />
                         <Route path="/add-recipe" element={<CreatePage />} />
                         <Route path="/profile" element={<ProfilePage />} />
