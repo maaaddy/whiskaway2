@@ -44,6 +44,8 @@ function About() {
             <p>clickability for cookbook similar to recipes</p>
             <p>adding multiple users for cookbook (owner, editor)</p>
             <br></br>
+            <p>Hover over recipe, doesnt increase in size. Shadow when hovered. Fit photo, no border. Hover shows a add button, recipe name, etc. Otherwise, just the photo shows. View recipe button also shown when hovered.</p>
+            <p>search for friends only from profile page.</p>
             <div className='pb-24'></div>
         </div>
     );
