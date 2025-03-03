@@ -16,22 +16,11 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    fName: {
-        type: String,
+    userInfo: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'UserInfo',
         required: true,
     },
-    lName: {
-        type: String,
-        required: true, 
-    },
-    bio: {
-        type: String,
-        default: '',
-    },
-    friends: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-    }],
 });
 
 module.exports = mongoose.model('User', UserSchema);
