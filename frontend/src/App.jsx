@@ -52,7 +52,7 @@ function App() {
                         <Route path="/" element={<HomePage searchQuery={searchQuery} recipeFilter={recipeFilter} />} />
                         <Route path="/recipe/:id" element={<RecipeDetailPage />} />
                         <Route path="/add-recipe" element={<CreatePage />} />
-                        <Route path="/profile" element={<ProfilePage />} />
+                        <Route path="/profile/:username?" element={<ProfilePage />} />
                         <Route path="/messages" element={<MessagePage />} />
                         <Route path="/cookbook" element={<CookbookPage />} />
                         <Route path="/cookbook/:id" element={<CookbookDetailPage />} />

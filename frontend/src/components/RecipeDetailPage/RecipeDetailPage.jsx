@@ -50,7 +50,7 @@ function RecipeDetailPage() {
         fetchRecipeDetails();
         fetchNutritionData();
         fetchCookbooks();
-    }, [id]);
+    }, [id, API_KEY]);
 
     const handleAddToCookbook = async () => {
         if (!selectedCookbook) {

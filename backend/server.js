@@ -116,10 +116,12 @@ app.post('/logout', (req, res) => {
   res.json({ message: 'Logged out successfully' });
 });
 
-app.get('/profile', async (req, res) => {
+app.get('/profile/:username?', async (req, res) => {
   const { token } = req.cookies;
+  const { username } = req.params;
+
   if (!token) {
-    return res.json(null);
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
   jwt.verify(token, process.env.JWT_SECRET, {}, async (err, decodedUser) => {
@@ -128,8 +130,24 @@ app.get('/profile', async (req, res) => {
     }
 
     try {
-      const user = await User.findById(decodedUser.id).populate('userInfo');
-      res.json(user);
+      let user;
+      if (!username) {
+        user = await User.findById(decodedUser.id).populate('userInfo');
+      } else {
+        user = await User.findOne({ username }).populate('userInfo');
+      }
+
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      res.json({
+        username: user.username,
+        fName: user.userInfo?.fName || null,
+        lName: user.userInfo?.lName || null,
+        bio: user.userInfo?.bio || null,
+        friends: user.userInfo?.friends ? user.userInfo.friends.length : 0,
+      });
     } catch (error) {
       console.error("Error fetching user data:", error);
       res.status(500).json({ error: "Failed to fetch user data" });
@@ -193,7 +211,7 @@ const verifyToken = (req, res, next) => {
 };
 
 app.post('/cookbook', verifyToken, async (req, res) => {
-  const { title } = req.body;
+  const { title, isPublic } = req.body;
   const userId = req.userId;
 
   if (!title) {
@@ -201,7 +219,11 @@ app.post('/cookbook', verifyToken, async (req, res) => {
   }
 
   try {
-    const newCookbook = new Cookbook({ title, owner: userId });
+    const newCookbook = new Cookbook({
+      title,
+      owner: userId,
+      isPublic: isPublic || false
+    });
     await newCookbook.save();
     res.status(201).json(newCookbook);
   } catch (err) {
@@ -239,6 +261,24 @@ app.get('/cookbook/:id', verifyToken, async (req, res) => {
   }
 });
 
+app.put('/cookbook/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const { isPublic } = req.body;
+
+      const updatedCookbook = await Cookbook.findByIdAndUpdate(id, { isPublic }, { new: true });
+
+      if (!updatedCookbook) {
+          return res.status(404).json({ error: "Cookbook not found" });
+      }
+
+      res.json(updatedCookbook);
+  } catch (error) {
+      console.error("Error updating cookbook privacy:", error);
+      res.status(500).json({ error: "Failed to update cookbook" });
+  }
+});
+
 app.post('/cookbook/:id/addRecipe', verifyToken, async (req, res) => {
   const { id } = req.params;
   const { recipeId } = req.body;
@@ -258,6 +298,24 @@ app.post('/cookbook/:id/addRecipe', verifyToken, async (req, res) => {
   } catch (err) {
     console.error('Error adding recipe to cookbook:', err);
     res.status(500).json({ error: 'Error adding recipe to cookbook' });
+  }
+});
+
+app.get('/cookbooks/user/:username', verifyToken, async (req, res) => {
+  const username = req.params.username;
+  const userId = req.userId;
+
+  try {
+    const user = await User.findOne({ username: username });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const cookbooks = await Cookbook.find({ owner: user._id }).populate('recipes');
+    res.status(200).json(cookbooks);
+  } catch (err) {
+    console.error('Error fetching cookbooks:', err);
+    res.status(500).json({ error: 'Error fetching cookbooks' });
   }
 });
 
