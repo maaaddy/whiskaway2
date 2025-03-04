@@ -21,15 +21,13 @@ function CookbookDetailPage() {
                             .catch(() => null)
                     )
                 );
-
                 setRecipes(recipeDetails.filter(recipe => recipe !== null));
             } catch (err) {
                 console.error('Error fetching cookbook:', err);
             }
         };
-
         fetchCookbook();
-    }, [id]);
+    }, [id, API_KEY]);
 
     return (
         <div className="recipe-list pt-20">

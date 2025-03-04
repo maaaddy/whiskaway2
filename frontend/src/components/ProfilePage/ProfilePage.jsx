@@ -1,44 +1,53 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 
 function ProfilePage() {
-    const [userData, setUserData] = useState();
+    const { username } = useParams();
+    const [userData, setUserData] = useState(null);
+    const [cookbooks, setCookbooks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    
-    useEffect(() => {
-        axios
-            .get('/profile', { withCredentials: true })
-            .then((response) => {
-                setUserData(response.data);
-                setLoading(false);
-            })
-            .catch((err) => {
-                console.error(err);
-                setError('Failed to load profile data');
-                setLoading(false);
-            });
-    }, []);
 
-    const previewProfilePic = (e) => {
-        e.preventDefault();
-        const input = e.target;
-        const preview = document.getElementById('profile-pic-preview');
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const profileRes = await axios.get(username ? `/profile/${username}` : `/profile`);
+                setUserData(profileRes.data);
     
-        if (input.files && input.files[0]) {
-          const reader = new FileReader();
-    
-          reader.onload = function(e) {
-            preview.src = e.target.result;
-          }
-    
-          reader.readAsDataURL(input.files[0]);
-        }
-    };
+                if (profileRes.data.username) {
+                    const cookbooksRes = await axios.get(`/cookbooks/user/${profileRes.data.username}`);
+                    const publicCookbooks = cookbooksRes.data.filter(cookbook => cookbook.isPublic);
+                    setCookbooks(publicCookbooks);
+                } else {
+                    setCookbooks([]);
+                }
+            } catch (err) {
+                console.error(err);
+                setError('Failed to load profile or cookbooks');
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, [username]);
 
     if (loading) return <p>Loading...</p>;
     if (error) return <p>{error}</p>;
-    if (!userData) return <p>No user data found. Please log in.</p>;
+    if (!userData) return <p>No user data found.</p>;
+
+    const copyProfileLink = () => {
+        const profileLink = username
+            ? `http://localhost:3000/profile/${username}`
+            : `http://localhost:3000/profile/${userData.username}`
+        navigator.clipboard.writeText(profileLink).then(() => {
+            alert('Profile link copied to clipboard!');
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
+            alert('Failed to copy the link');
+        });
+    };
 
     return (
         <div className="profile-line back">
@@ -49,40 +58,69 @@ function ProfilePage() {
                         id="profile-pic-input"
                         className="absolute opacity-0"
                         accept="image/*"
-                        onChange={previewProfilePic}
+                        onChange={(e) => {
+                            const input = e.target;
+                            const preview = document.getElementById('profile-pic-preview');
+
+                            if (input.files && input.files[0]) {
+                                const reader = new FileReader();
+                                reader.onload = (e) => {
+                                    preview.src = e.target.result;
+                                };
+                                reader.readAsDataURL(input.files[0]);
+                            }
+                        }}
                     />
-                    <label htmlFor="profile-pic-input" className="block w-36 h-36 rounded-full overflow-hidden border border-black mb-1">
+                    <label htmlFor="profile-pic-input" className="block w-36 h-36 rounded-full overflow-hidden border border-gray-200 mb-1">
                         <img
                             id="profile-pic-preview"
-                            src={userData.profilePic || "#"}
+                            src={userData.profilePic || "/profilepic.jpg"}
                             alt="Profile Pic"
                             className="object-cover w-full h-full"
                         />
                     </label>
                 </div>
 
-                <div className="profile-details text-center">  
-                    <span className='font-semibold text-2xl'>{userData.fName} {userData.lName}</span>
+                <div className="profile-details text-center">
+                    <span className="font-semibold text-2xl">{userData.fName} {userData.lName}</span>
                     <p className="flex items-center justify-center gap-2 pt-2">
-                        <img src="/logo.png" alt="Logo" className="w-6 h-6 object-contain" /> 
+                        <img src="/logo.png" alt="Logo" className="w-6 h-6 object-contain" />
                         <span className="text-sm font-medium">{userData.username}</span>
                     </p>
                     <p>{userData.friends?.length || 0} friends</p>
-                    <p className='bio-section'>{userData.bio}</p>
+                    <p className="bio-section">{userData.bio}</p>
                     <div className="flex justify-center gap-4 mt-4">
-                        <button className="bg-blue-200 rounded-full px-4 py-2 font-semibold">Share</button>
+                        <button 
+                            onClick={copyProfileLink} 
+                            className="bg-blue-200 rounded-full px-4 py-2 font-semibold"
+                        >
+                            Share
+                        </button>
                         <button className="bg-blue-200 rounded-full px-4 py-2 font-semibold">Edit profile</button>
                     </div>
                 </div>
             </div>
             <hr className="border-t-1 border-gray-200 my-4" />
-            <div className='cookbook-profile'>
-                <div className='my-6'>
-                    <span className='text-xl'>My Cookbooks</span>
+            <div className="cookbook-profile">
+                <div className="my-6">
+                    <span className="text-xl">
+                        {userData.username}'s Public Cookbooks
+                    </span>
                 </div>
-
+                <div className="recipe-list">
+                    {cookbooks.length > 0 ? (
+                        cookbooks.map((cookbook) => (
+                            <div key={cookbook._id} className="cookbook-card">
+                                <Link to={`/cookbook/${cookbook._id}`}>
+                                    <h3>{cookbook.title}</h3>
+                                </Link>
+                            </div>
+                        ))
+                    ) : (
+                        <p>No cookbooks created yet.</p>
+                    )}
+                </div>
             </div>
-
         </div>
     );
 }

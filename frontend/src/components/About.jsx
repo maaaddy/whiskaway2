@@ -47,6 +47,7 @@ function About() {
             <p>Hover over recipe, doesnt increase in size. Shadow when hovered. Fit photo, no border. Hover shows a add button, recipe name, etc. Otherwise, just the photo shows. View recipe button also shown when hovered.</p>
             <p>search for friends only from profile page.</p>
             <p>click to flip recipe card in cookbook. One side is ingredients, one side is recipe instructions.</p>
+            <p>Add private/public TF to database for cookbooks</p>
             <div className='pb-24'></div>
         </div>
     );
