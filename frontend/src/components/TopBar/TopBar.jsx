@@ -6,7 +6,7 @@ import { faSearch, faInfoCircle, faCog, faSignOutAlt } from "@fortawesome/free-s
 function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
     const location = useLocation();
     const showSearchBar = location.pathname === "/";
-    const showCookbookSearch = location.pathname === "/profile" || location.pathname === "/recipe-books";
+    const showCookbookSearch = location.pathname === "/cookbook";
 
     const [selectedCuisine, setSelectedCuisine] = useState("all");
     const [selectedMealType, setSelectedMealType] = useState("all");
@@ -37,7 +37,7 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
     };
     
     return (
-        <div className="fixed top-0 left-0 w-full bg-[#ebf6f7] backdrop-blur-md shadow-md py-3 px-6 flex items-center justify-between z-50">
+        <div className="fixed w-full bg-white backdrop-blur-md shadow-sm py-3 px-6 flex items-center justify-between z-50">
             <div className="flex items-center space-x-3">
                 <img src="/logo.png" alt="Logo" className="w-12 h-auto" />
                 <span className="text-xl text-teal-700 font-bold">WhiskAway</span>

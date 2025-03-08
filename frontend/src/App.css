@@ -19,7 +19,7 @@ h1 {
 
 /* Background Color to match cover photo :) --------------- */
 .back {
-  @apply bg-[#dfeef2] min-h-screen w-full py-20;
+  @apply py-20;
 }
 
 /* Recipe List Styling -------------------------------------*/
@@ -28,18 +28,18 @@ h1 {
 }
 
 .recipe-card {
-  @apply border border-gray-300 rounded-lg p-4 shadow-md bg-white transition-transform transform hover:scale-105 hover:shadow-lg;
-  width: 350px;
+  @apply border border-gray-300 rounded-2xl bg-white transition-transform transform;
+  width: 300px;
   height: auto;
-  transition: transform 0.3s ease-in-out;
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out, background-color 0.3s ease-in-out;
 }
 
 .recipe-card:hover {
-  @apply scale-105 shadow-lg;
+  @apply shadow-lg rounded-2xl;
 }
 
 .recipe-card img {
-  @apply w-full h-48 rounded-lg object-cover;
+  @apply w-full h-48 rounded-2xl object-cover;
 }
 
 .recipe-card h2 {
@@ -50,9 +50,13 @@ h1 {
   @apply text-gray-600 text-sm mt-2;
 }
 
+.hovering {
+  @apply hover:bg-black bg-opacity-50 rounded-2xl;
+}
+
 /* Bottom Navigation Bar Styling -------------------------------------*/
 .bottom-nav {
-  @apply flex justify-around p-4 bg-[#ebf6f7] border-t border-gray-200 fixed bottom-0 w-full;
+  @apply flex justify-around p-4 bg-white border-t border-gray-200 fixed bottom-0 w-full;
 }
 
 .bottom-nav a {
