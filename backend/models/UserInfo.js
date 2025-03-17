@@ -17,6 +17,9 @@ const UserInfoSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'UserInfo',
     }],
+    profilePic: {
+        type: Buffer,
+    },
 });
 
 module.exports = mongoose.model('UserInfo', UserInfoSchema);

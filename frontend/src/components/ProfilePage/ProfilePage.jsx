@@ -49,6 +49,45 @@ function ProfilePage() {
         });
     };
 
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+    
+        if (!userData?.userInfo) {
+            console.error("UserInfo ID not available:", userData);
+            return;
+        }
+    
+        const userId = userData.userInfo.toString(); // Ensure correct ID
+    
+        console.log("Uploading image for userInfo ID:", userId);
+    
+        const formData = new FormData();
+        formData.append("profilePic", file);
+        formData.append("userId", userId);
+    
+        try {
+            const response = await axios.post("http://localhost:3000/upload", formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+    
+            console.log("Upload Success:", response.data);
+    
+            // Fetch the updated image from the backend
+            const imgRes = await axios.get(`http://localhost:3000/profilePic/${userId}`, { responseType: 'arraybuffer' });
+    
+            // Convert response to base64
+            const fileReader = new FileReader();
+            fileReader.readAsDataURL(new Blob([imgRes.data]));
+            fileReader.onloadend = () => {
+                setUserData((prev) => ({ ...prev, profilePic: fileReader.result }));
+            };
+        } catch (error) {
+            console.error("Upload failed:", error.response ? error.response.data : error.message);
+        }
+    };
+    
+    
     return (
         <div className="profile-line back">
             <div className="profile-page">
@@ -58,26 +97,15 @@ function ProfilePage() {
                         id="profile-pic-input"
                         className="absolute opacity-0"
                         accept="image/*"
-                        onChange={(e) => {
-                            const input = e.target;
-                            const preview = document.getElementById('profile-pic-preview');
-
-                            if (input.files && input.files[0]) {
-                                const reader = new FileReader();
-                                reader.onload = (e) => {
-                                    preview.src = e.target.result;
-                                };
-                                reader.readAsDataURL(input.files[0]);
-                            }
-                        }}
+                        onChange={handleImageUpload}
                     />
                     <label htmlFor="profile-pic-input" className="block w-36 h-36 rounded-full overflow-hidden border border-gray-200 mb-1">
-                        <img
-                            id="profile-pic-preview"
-                            src={userData.profilePic || "/profilepic.jpg"}
-                            alt="Profile Pic"
-                            className="object-cover w-full h-full"
-                        />
+                    <img
+                        id="profile-pic-preview"
+                        src={userData.profilePic ? userData.profilePic : "/profilepic.jpg"}
+                        alt="Profile Pic"
+                        className="object-cover w-full h-full"
+                    />
                     </label>
                 </div>
 

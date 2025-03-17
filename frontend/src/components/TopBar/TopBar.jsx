@@ -1,41 +1,125 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import Select from "react-select";
 import { Link, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch, faInfoCircle, faCog, faSignOutAlt } from "@fortawesome/free-solid-svg-icons";
 
+const mealTypeOptions = [
+    { value: "", label: "All Meal Types" },
+    { value: "main course", label: "Main Course" },
+    { value: "side dish", label: "Side Dish" },
+    { value: "dessert", label: "Dessert"},
+    { value: "appetizer", label: "Appetizer" },
+    { value: "salad", label: "Salad"},
+    { value: "bread", label: "Bread"},
+    { value: "breakfast", label: "Breakfast" },
+    { value: "soup", label: "Soup"},
+    { value: "beverage", label: "Beverage" },
+    { value: "sauce", label: "Sauce" },
+    { value: "lunch", label: "Lunch" },
+    { value: "dinner", label: "Dinner" },
+    { value: "marinade", label: "Marinade" },
+    { value: "fingerfood", label: "Finger Food" },
+    { value: "snack", label: "Snack" },
+    { value: "drink", label: "Drink" }
+];
+
+const cuisineOptions = [
+    { value: "", label: "All Cuisines" },
+    { value: "african", label: "African" },
+    { value: "asian", label: "Asian" },
+    { value: "american", label: "American" },
+    { value: "british", label: "British" },
+    { value: "cajun", label: "Cajun" },
+    { value: "caribbean", label: "Caribbean" },
+    { value: "chinese", label: "Chinese" },
+    { value: "eastern european", label: "Eastern European" },
+    { value: "european", label: "European" },
+    { value: "french", label: "French" },
+    { value: "german", label: "German" },
+    { value: "greek", label: "Greek" },
+    { value: "indian", label: "Indian" },
+    { value: "irish", label: "Irish" },
+    { value: "italian", label: "Italian" },
+    { value: "japanese", label: "Japanese" },
+    { value: "jewish", label: "Jewish" },
+    { value: "korean", label: "Korean" },
+    { value: "latin american", label: "Latin American" },
+    { value: "mediterranean", label: "Mediterranean" },
+    { value: "mexican", label: "Mexican" },
+    { value: "middle eastern", label: "Middle Eastern" },
+    { value: "nordic", label: "Nordic" },
+    { value: "southern", label: "Southern" },
+    { value: "spanish", label: "Spanish" },
+    { value: "thai", label: "Thai" },
+    { value: "vietnamese", label: "Vietnamese" }
+];
+
+const dietOptions = [
+    { value: "", label: "All Diets" },
+    { value: "gluten free", label: "Gluten-Free" },
+    { value: "ketogenic", label: "Ketogenic" },
+    { value: "vegetarian", label: "Vegetarian" },
+    { value: "lacto vegetarian", label: "Lacto-Vegetarian" },
+    { value: "ovo vegetarian", label: "Ovo-Vegetarian" },
+    { value: "vegan", label: "Vegan" },
+    { value: "pescetarian", label: "Pescetarian" },
+    { value: "paleo", label: "Paleo" },
+    { value: "primal", label: "Primal" },
+    { value: "low fodmap", label: "Low FODMAP" },
+    { value: "whole30", label: "Whole30" }
+];
+
+const intoleranceOptions = [
+    { value: "", label: "No Intolerances" },
+    { value: "dairy", label: "Dairy-Free" },
+    { value: "egg", label: "Egg-Free" },
+    { value: "gluten", label: "Gluten-Free" },
+    { value: "grain", label: "Grain-Free" },
+    { value: "peanut", label: "Peanut-Free" },
+    { value: "seafood", label: "Seafood-Free" },
+    { value: "sesame", label: "Sesame-Free" },
+    { value: "shellfish", label: "Shellfish-Free" },
+    { value: "soy", label: "Soy-Free" },
+    { value: "sulfite", label: "Sulfite-Free" },
+    { value: "tree nut", label: "Tree Nut-Free" },
+    { value: "wheat", label: "Wheat-Free" }
+];
+
 function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
     const location = useLocation();
     const showSearchBar = location.pathname === "/";
-    const showCookbookSearch = location.pathname === "/cookbook";
-
-    const [selectedCuisine, setSelectedCuisine] = useState("all");
-    const [selectedMealType, setSelectedMealType] = useState("all");
-    const [selectedDiet, setSelectedDiet] = useState("all");
-    const [selectedIntolerance, setSelectedIntolerance] = useState("none");
-
-    const handleSearchChange = (e) => {
-        setSearchQuery(e.target.value);
-    };
-
-    const handleCookbookChange = (e) => {
-        setSearchQuery(e.target.value);
-    };
-
-    const handleLogoutClick = (e) => {
-        e.preventDefault();
-        onLogout();
-    };
-
-    const applyFilters = (e) => {
-        e.preventDefault();
-        setRecipeFilter({
-            diet: selectedDiet !== "all" ? selectedDiet : "",
-            type: selectedMealType !== "all" ? selectedMealType : "",
-            cuisine: selectedCuisine !== "all" ? selectedCuisine : "",
-            intolerances: selectedIntolerance !== "none" ? selectedIntolerance : ""
-        });
-    };
     
+    const [filtersVisible, setFiltersVisible] = useState(false);
+    const filterRef = useRef(null);
+    
+    const [selectedMealType, setSelectedMealType] = useState([]);
+    const [selectedCuisine, setSelectedCuisine] = useState([]);
+    const [selectedDiet, setSelectedDiet] = useState([]);
+    const [selectedIntolerance, setSelectedIntolerance] = useState([]);
+
+    const applyFilters = () => {
+        setRecipeFilter({
+            type: selectedMealType.map(option => option.value).join(","),
+            cuisine: selectedCuisine.map(option => option.value).join(","),
+            diet: selectedDiet.map(option => option.value).join(","),
+            intolerances: selectedIntolerance.map(option => option.value).join(",")
+        });
+        setFiltersVisible(false);
+    };
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (filterRef.current && !filterRef.current.contains(event.target)) {
+                setFiltersVisible(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
+
     return (
         <div className="fixed w-full bg-white backdrop-blur-md shadow-sm py-3 px-6 flex items-center justify-between z-50">
             <div className="flex items-center space-x-3">
@@ -43,89 +127,29 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
                 <span className="text-xl text-teal-700 font-bold">WhiskAway</span>
             </div>
 
-            {(showSearchBar || showCookbookSearch) && (
-                <div className="relative flex items-center space-x-3">
+            {showSearchBar && (
+                <div className="relative flex flex-col w-64" ref={filterRef}>
                     <input
                         type="text"
-                        placeholder={showSearchBar ? "Search recipes..." : "Search Your Cookbooks..."}
+                        placeholder="Search recipes..."
                         value={searchQuery}
-                        onChange={showSearchBar ? handleSearchChange : handleCookbookChange}
-                        className="w-64 px-5 py-3 pl-12 rounded-full bg-white/70 backdrop-blur-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 shadow-sm"
+                        onFocus={() => setFiltersVisible(true)}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="px-5 py-3 pl-12 rounded-full bg-white/70 backdrop-blur-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 shadow-sm"
                     />
                     <FontAwesomeIcon icon={faSearch} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500" />
-
-                    {showSearchBar && (
-                        <div className="flex space-x-2">
-                            <select
-                                onChange={(e) => setSelectedMealType(e.target.value)}
-                                className="px-4 py-2 border border-gray-300 rounded-md bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            >
-                                <option value="all">All Meal Types</option>
-                                <option value="breakfast">Breakfast</option>
-                                <option value="main course">Lunch/Dinner</option>
-                                <option value="dessert">Dessert</option>
-                            </select>
-
-                            <select
-                                onChange={(e) => setSelectedCuisine(e.target.value)}
-                                value={selectedCuisine}
-                                className="px-4 py-2 border border-gray-300 rounded-md bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            >
-                                <option value="all">All Cuisines</option>
-                                <option value="italian">Italian</option>
-                                <option value="mexican">Mexican</option>
-                                <option value="chinese">Chinese</option>
-                                <option value="american">American</option>
-                                <option value="indian">Indian</option>
-                            </select>
-
-                            <select
-                                onChange={(e) => setSelectedDiet(e.target.value)}
-                                className="px-4 py-2 border border-gray-300 rounded-md bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            >
-                                <option value="all">All Recipes</option>
-                                <option value="vegetarian">Vegetarian</option>
-                                <option value="vegan">Vegan</option>
-                                <option value="gluten-free">Gluten-Free</option>
-                                <option value="ketogenic">Keto Friendly</option>
-                                <option value="paleo">Paleo</option>
-                                <option value="low-carb">Low Carb</option>
-                                <option value="high-protein">High Protein</option>
-                                <option value="dairy-free">Dairy-Free</option>
-                                <option value="nut-free">Nut-Free</option>
-                                <option value="low-sodium">Low Sodium</option>
-                                <option value="mediterranean">Mediterranean</option>
-                                <option value="whole30">Whole30</option>
-                                <option value="flexitarian">Flexitarian</option>
-                            </select>
-
-                            <select
-                                onChange={(e) => setSelectedIntolerance(e.target.value)}
-                                className="px-4 py-2 border border-gray-300 rounded-md bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            >
-                                <option value="none">No Intolerances</option>
-                                <option value="dairy">Dairy-Free</option>
-                                <option value="egg">Egg-Free</option>
-                                <option value="gluten">Gluten-Free</option>
-                                <option value="grain">Grain-Free</option>
-                                <option value="peanut">Peanut-Free</option>
-                                <option value="seafood">Seafood-Free</option>
-                                <option value="sesame">Sesame-Free</option>
-                                <option value="shellfish">Shellfish-Free</option>
-                                <option value="soy">Soy-Free</option>
-                                <option value="sulfite">Sulfite-Free</option>
-                                <option value="tree nut">Tree Nut-Free</option>
-                                <option value="wheat">Wheat-Free</option>
-                            </select>
+                    
+                    {filtersVisible && (
+                        <div className="absolute top-full left-0 w-full bg-white border border-gray-300 rounded-md shadow-md p-4 mt-2 z-50">
+                            <Select options={mealTypeOptions} isMulti onChange={setSelectedMealType} placeholder="Select Meal Type..." />
+                            <Select options={cuisineOptions} isMulti onChange={setSelectedCuisine} placeholder="Select Cuisine..." />
+                            <Select options={dietOptions} isMulti onChange={setSelectedDiet} placeholder="Select Diet..." />
+                            <Select options={intoleranceOptions} isMulti onChange={setSelectedIntolerance} placeholder="Select Intolerances..." />
+                            <button onClick={applyFilters} className="mt-2 px-4 py-2 bg-teal-500 text-white rounded-md shadow-md hover:bg-teal-600 transition">
+                                Apply Filters
+                            </button>
                         </div>
                     )}
-
-                    <button
-                        onClick={applyFilters}
-                        className="px-4 py-2 bg-teal-500 text-white rounded-md shadow-md hover:bg-teal-600 transition"
-                    >
-                        Apply Filters
-                    </button>
                 </div>
             )}
 
@@ -136,7 +160,7 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
                 <Link to="/settings" className="hover:text-gray-700 transition">
                     <FontAwesomeIcon icon={faCog} size="lg" />
                 </Link>
-                <a href="/" onClick={handleLogoutClick} className="hover:text-red-500 transition">
+                <a href="/" onClick={(e) => { e.preventDefault(); onLogout(); }} className="hover:text-red-500 transition">
                     <FontAwesomeIcon icon={faSignOutAlt} size="lg" />
                 </a>
             </div>

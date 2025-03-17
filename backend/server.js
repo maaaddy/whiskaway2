@@ -9,6 +9,9 @@ const Recipe = require('./models/Recipe');
 const Cookbook = require('./models/Cookbook');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 dotenv.config();
 
@@ -20,7 +23,10 @@ mongoose.connect(process.env.MONGO_URL)
   });
 
 const app = express();
-app.use(express.json());
+//app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(express.json({ limit: '10mb' })); // Allows JSON payloads up to 10MB
+app.use(express.urlencoded({ limit: '10mb', extended: true })); 
 app.use(cors({
   credentials: true,
   origin: process.env.CLIENT_URL,
@@ -125,33 +131,41 @@ app.get('/profile/:username?', async (req, res) => {
   }
 
   jwt.verify(token, process.env.JWT_SECRET, {}, async (err, decodedUser) => {
-    if (err) {
-      return res.status(401).json({ error: "Invalid token" });
-    }
-
-    try {
-      let user;
-      if (!username) {
-        user = await User.findById(decodedUser.id).populate('userInfo');
-      } else {
-        user = await User.findOne({ username }).populate('userInfo');
+      if (err) {
+        return res.status(401).json({ error: "Invalid token" });
       }
 
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
-      }
+      try {
+        let user;
+        if (!username) {
+            user = await User.findById(decodedUser.id).populate('userInfo');
+        } else {
+            user = await User.findOne({ username }).populate('userInfo');
+        }
 
-      res.json({
-        username: user.username,
-        fName: user.userInfo?.fName || null,
-        lName: user.userInfo?.lName || null,
-        bio: user.userInfo?.bio || null,
-        friends: user.userInfo?.friends ? user.userInfo.friends.length : 0,
-      });
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-      res.status(500).json({ error: "Failed to fetch user data" });
-    }
+        if (!user || !user.userInfo) {
+          return res.status(404).json({ error: "User or UserInfo not found" });
+        }
+
+        let profilePicBase64 = "";
+        if (user.userInfo.profilePic) {
+          profilePicBase64 = `data:image/jpeg;base64,${user.userInfo.profilePic.toString('base64')}`;
+        }
+
+        res.json({
+          _id: user.userInfo._id.toString(),
+          username: user.username,
+          userInfo: user.userInfo._id.toString(),
+          fName: user.userInfo.fName,
+          lName: user.userInfo.lName,
+          bio: user.userInfo.bio,
+          profilePic: profilePicBase64,
+          friends: user.userInfo.friends.length,
+        });
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        res.status(500).json({ error: "Failed to fetch user data" });
+      }
   });
 });
 
@@ -316,6 +330,46 @@ app.get('/cookbooks/user/:username', verifyToken, async (req, res) => {
   } catch (err) {
     console.error('Error fetching cookbooks:', err);
     res.status(500).json({ error: 'Error fetching cookbooks' });
+  }
+});
+// Profile photo addition ----------------------------------------------
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+app.post('/upload', upload.single('profilePic'), async (req, res) => {
+  const { userId } = req.body;
+
+  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ msg: 'Invalid user ID' });
+  }
+
+  try {
+      const userInfo = await UserInfo.findById(userId);
+      if (!userInfo) {
+          return res.status(404).json({ msg: 'UserInfo not found' });
+      }
+
+      userInfo.profilePic = req.file.buffer;
+      await userInfo.save();
+      return res.json({ msg: 'Upload successful', userInfo });
+  } catch (err) {
+      console.error('Error uploading image:', err);
+      return res.status(500).json({ msg: 'Error uploading image' });
+  }
+});
+
+app.get('/profilePic/:userId', async (req, res) => {
+  try {
+      const userInfo = await UserInfo.findById(req.params.userId);
+      if (!userInfo || !userInfo.profilePic) {
+          return res.status(404).send('Profile picture not found');
+      }
+
+      res.contentType('image/jpeg');
+      res.send(userInfo.profilePic);
+  } catch (error) {
+      console.error(error);
+      res.status(500).send('Error fetching profile picture');
   }
 });
 
