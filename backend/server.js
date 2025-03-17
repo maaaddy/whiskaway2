@@ -169,6 +169,63 @@ app.get('/profile/:username?', async (req, res) => {
   });
 });
 
+app.put('/profile/update', async (req, res) => {
+  const { token } = req.cookies;
+  if (!token) {
+      return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, {}, async (err, decodedUser) => {
+      if (err) {
+          return res.status(401).json({ error: "Invalid token" });
+      }
+
+      try {
+          const user = await User.findById(decodedUser.id).populate('userInfo');
+          if (!user || !user.userInfo) {
+              return res.status(404).json({ error: "User not found" });
+          }
+
+          const { fName, lName, bio, profilePic } = req.body;
+          user.userInfo.fName = fName || user.userInfo.fName;
+          user.userInfo.lName = lName || user.userInfo.lName;
+          user.userInfo.bio = bio || user.userInfo.bio;
+
+          if (profilePic) {
+              const buffer = Buffer.from(profilePic.split(",")[1], "base64");
+              user.userInfo.profilePic = buffer;
+          }
+
+          await user.userInfo.save();
+          res.json({ message: "Profile updated successfully" });
+
+      } catch (error) {
+          console.error("Error updating profile:", error);
+          res.status(500).json({ error: "Failed to update profile" });
+      }
+  });
+});
+
+app.get('/search/users', async (req, res) => {
+  const { query, currentUser } = req.query;
+
+  if (!query) {
+      return res.json([]);
+  }
+
+  try {
+      const users = await User.find(
+          { 
+              username: { $regex: `^${query}`, $options: 'i', $ne: currentUser }
+          }
+      ).select("username").limit(5);
+      res.json(users);
+  } catch (error) {
+      console.error("User search error:", error);
+      res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // Friends ------------------------------------------------------
 app.post('/addFriend', async (req, res) => {
   try {
@@ -332,6 +389,25 @@ app.get('/cookbooks/user/:username', verifyToken, async (req, res) => {
     res.status(500).json({ error: 'Error fetching cookbooks' });
   }
 });
+
+app.delete('/cookbook/:id', verifyToken, async (req, res) => {
+  const cookbookId = req.params.id;
+  const userId = req.userId;
+
+  try {
+      const cookbook = await Cookbook.findOne({ _id: cookbookId, owner: userId });
+      if (!cookbook) {
+          return res.status(404).json({ error: 'Cookbook not found or not owned by you' });
+      }
+
+      await Cookbook.findByIdAndDelete(cookbookId);
+      res.status(200).json({ message: 'Cookbook deleted successfully' });
+  } catch (err) {
+      console.error('Error deleting cookbook:', err);
+      res.status(500).json({ error: 'Error deleting cookbook' });
+  }
+});
+
 // Profile photo addition ----------------------------------------------
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });

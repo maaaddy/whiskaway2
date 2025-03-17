@@ -3,6 +3,7 @@ import Select from "react-select";
 import { Link, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch, faInfoCircle, faCog, faSignOutAlt } from "@fortawesome/free-solid-svg-icons";
+import axios from 'axios';
 
 const mealTypeOptions = [
     { value: "", label: "All Meal Types" },
@@ -89,7 +90,11 @@ const intoleranceOptions = [
 function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
     const location = useLocation();
     const showSearchBar = location.pathname === "/";
-    
+    const showUserSearchBar = location.pathname.startsWith("/profile");
+
+    const [userSearchQuery, setUserSearchQuery] = useState("");
+    const [searchResults, setSearchResults] = useState([]);
+
     const [filtersVisible, setFiltersVisible] = useState(false);
     const filterRef = useRef(null);
     
@@ -97,6 +102,29 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
     const [selectedCuisine, setSelectedCuisine] = useState([]);
     const [selectedDiet, setSelectedDiet] = useState([]);
     const [selectedIntolerance, setSelectedIntolerance] = useState([]);
+    const [loggedInUsername, setLoggedInUsername] = useState(null);
+
+    useEffect(() => {
+        const fetchCurrentUser = async () => {
+            try {
+                const response = await axios.get("/profile");
+                setLoggedInUsername(response.data.username);
+            } catch (error) {
+                console.error("Error fetching logged-in user:", error);
+            }
+        };
+        fetchCurrentUser();
+    }, []);
+
+    useEffect(() => {
+        if (userSearchQuery.length > 0 && loggedInUsername) {
+            axios.get(`/search/users?query=${userSearchQuery}&currentUser=${loggedInUsername}`)
+                .then(res => setSearchResults(res.data))
+                .catch(err => console.error("User search failed:", err));
+        } else {
+            setSearchResults([]);
+        }
+    }, [userSearchQuery, loggedInUsername]);    
 
     const applyFilters = () => {
         setRecipeFilter({
@@ -149,6 +177,37 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
                                 Apply Filters
                             </button>
                         </div>
+                    )}
+                </div>
+            )}
+
+            {showUserSearchBar && (
+                <div className="relative flex flex-col w-64">
+                    <input
+                        type="text"
+                        placeholder="Find friends..."
+                        value={userSearchQuery}
+                        onChange={(e) => setUserSearchQuery(e.target.value)}
+                        className="px-5 py-3 pl-12 rounded-full bg-white/70 backdrop-blur-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 shadow-sm"
+                    />
+                    <FontAwesomeIcon icon={faSearch} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500" />
+                    
+                    {searchResults.length > 0 && (
+                        <ul className="absolute top-full left-0 w-full bg-white border rounded-md shadow-md mt-2 z-50">
+                            {searchResults.map(user => (
+                                <li 
+                                    key={user.username} 
+                                    className="px-4 py-2 flex items-center space-x-2 hover:bg-gray-200 cursor-pointer"
+                                    onClick={() => {
+                                        window.location.href = `/profile/${user.username}`;
+                                        setUserSearchQuery("");
+                                    }}
+                                >
+                                    <img src="/logo.png" alt="Logo" className="w-6 h-6 object-contain" />
+                                    <span>{user.username}</span>
+                                </li>
+                            ))}
+                        </ul>
                     )}
                 </div>
             )}

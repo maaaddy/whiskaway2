@@ -16,7 +16,6 @@ function About() {
             <div className='bg-gray-200'>
                 <span className='text-xl'>Profile Section:</span>
             </div>
-            <p>Profile Picture saving & displaying</p>
             <p>bio character limit</p>
             <p>friends</p>
             <br></br>
@@ -28,7 +27,6 @@ function About() {
             <div className='bg-gray-200'>
                 <span className='text-xl'>Database</span>
             </div>
-            <p>profile picture</p>
             <p>allergens</p>
             <p>dietary restrictions</p>
             <br></br>
@@ -38,8 +36,14 @@ function About() {
             <p>Styling for cookbook</p>
             <p>adding multiple users for cookbook (owner, editor)</p>
             <br></br>
+            <div className='bg-gray-200'>
+                <span className='text-xl'>Other/Random</span>
+            </div>
             <p>search for friends only from profile page.</p>
             <p>click to flip recipe card in cookbook. One side is ingredients, one side is recipe instructions.</p>
+            <p>pencil icon small for under profile photo to make obvious when editing.</p>
+            <p>draw out what the recipe detail page should look like. fr.</p>
+            <p>notifications (bell icon?)</p>
             <div className='pb-24'></div>
         </div>
     );
