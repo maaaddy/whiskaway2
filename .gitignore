@@ -12,6 +12,7 @@ tmp/
 
 # production
 build/
+backend/updates
 
 # misc
 .DS_Store

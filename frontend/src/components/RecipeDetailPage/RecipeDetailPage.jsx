@@ -72,7 +72,7 @@ function RecipeDetailPage() {
     if (!recipe) return <p>Loading...</p>;
 
     return (
-        <div className="recipe-detail-page max-w-4xl mx-auto p-6 pb-24">
+        <div className="back recipe-detail-page max-w-4xl mx-auto p-6 pb-24">
             <h2 className="text-4xl font-bold text-center text-gray-800 mb-6">{recipe.title}</h2>
             <img src={recipe.image} alt={recipe.title} className="w-full h-72 object-cover rounded-lg mb-6 shadow-lg" />
             <div className="ingredients-card bg-white p-6 rounded-xl shadow-lg mb-6">

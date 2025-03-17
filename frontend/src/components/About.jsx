@@ -4,7 +4,7 @@ import React from 'react';
 
 function About() {
     return (
-        <div className="about mx-4"> 
+        <div className="back about mx-4"> 
             <div className='mb-4'>
                 <span className='font-semibold text-2xl'>Ongoing list of stuff to add</span>
             </div>
@@ -16,10 +16,8 @@ function About() {
             <div className='bg-gray-200'>
                 <span className='text-xl'>Profile Section:</span>
             </div>
-            <p>fName</p>
-            <p>lName</p>
             <p>Profile Picture saving & displaying</p>
-            <p>bio and bio character limit</p>
+            <p>bio character limit</p>
             <p>friends</p>
             <br></br>
             <div className='bg-gray-200'>
@@ -33,21 +31,15 @@ function About() {
             <p>profile picture</p>
             <p>allergens</p>
             <p>dietary restrictions</p>
-            <p>new table for cookbooks</p>
             <br></br>
             <div className='bg-gray-200'>
                 <span className='text-xl'>Cookbooks</span>
             </div>
-            <p>Cookbook object</p>
-            <p>assign recipes to cookbook</p>
             <p>Styling for cookbook</p>
-            <p>clickability for cookbook similar to recipes</p>
             <p>adding multiple users for cookbook (owner, editor)</p>
             <br></br>
-            <p>Hover over recipe, doesnt increase in size. Shadow when hovered. Fit photo, no border. Hover shows a add button, recipe name, etc. Otherwise, just the photo shows. View recipe button also shown when hovered.</p>
             <p>search for friends only from profile page.</p>
             <p>click to flip recipe card in cookbook. One side is ingredients, one side is recipe instructions.</p>
-            <p>Add private/public TF to database for cookbooks</p>
             <div className='pb-24'></div>
         </div>
     );
