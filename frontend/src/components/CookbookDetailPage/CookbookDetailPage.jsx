@@ -65,24 +65,34 @@ function CookbookDetailPage() {
     }, [id, API_KEY]);
 
     return (
-        <div className="recipe-list pt-20">
+        <div className="recipe-list back">
             {loading ? (
                 <p>Loading...</p>
             ) : (
                 <>
-                    <h1>{cookbook?.title}</h1>
-                    <h2>Recipes</h2>
-                    {recipes.length > 0 ? (
+                    {cookbook.recipes.length === 0 ? (
+                        <div className="text-center mt-8 back">
+                            <p className="text-gray-600 text-lg mb-2">
+                                There are no recipes in this cookbook.
+                            </p>
+                            <Link to="/" className="text-blue-600 hover:text-blue-800 underline">
+                                Browse for recipes
+                            </Link>
+                        </div>
+                        ) : (
                         recipes.map((recipe) => (
-                            <div key={recipe.id} className="recipe-card">
-                                <Link to={`/recipe/${recipe.id}`}>
-                                    <h3>{recipe.title}</h3>
-                                </Link>
-                                <img src={recipe.image} alt={recipe.title} style={{ width: '200px', borderRadius: '10px' }} />
+                            <div key={recipe.id} className="recipe-card mb-6">
+                            <Link to={`/recipe/${recipe.id}`}>
+                                <h3 className="text-lg font-medium">{recipe.title}</h3>
+                            </Link>
+                            <img
+                                src={recipe.image}
+                                alt={recipe.title}
+                                style={{ width: '200px', borderRadius: '10px' }}
+                                className="mt-2"
+                            />
                             </div>
                         ))
-                    ) : (
-                        <p>No recipes added yet.</p>
                     )}
                 </>
             )}

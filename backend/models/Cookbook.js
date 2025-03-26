@@ -17,6 +17,10 @@ const cookbookSchema = new mongoose.Schema({
     type: Boolean, 
     default: false 
   },
+  coverImage: {
+    type: String,
+    default: 'cover5.JPG'
+  },  
 });
 
 const Cookbook = mongoose.model('Cookbook', cookbookSchema);

@@ -282,7 +282,7 @@ const verifyToken = (req, res, next) => {
 };
 
 app.post('/cookbook', verifyToken, async (req, res) => {
-  const { title, isPublic } = req.body;
+    const { title, isPublic, coverImage } = req.body;
   const userId = req.userId;
 
   if (!title) {
@@ -293,7 +293,8 @@ app.post('/cookbook', verifyToken, async (req, res) => {
     const newCookbook = new Cookbook({
       title,
       owner: userId,
-      isPublic: isPublic || false
+      isPublic: isPublic || false,
+      coverImage: coverImage || 'cover5.JPG',
     });
     await newCookbook.save();
     res.status(201).json(newCookbook);
