@@ -8,6 +8,7 @@ function CookbookPage() {
     const [view, setView] = useState('cookbooks');
     const [newCookbookTitle, setNewCookbookTitle] = useState('');
     const [isPublic, setIsPublic] = useState(false);
+    const [coverImage, setCoverImage] = useState('');
 
     useEffect(() => {
         const fetchCookbooks = async () => {
@@ -22,17 +23,18 @@ function CookbookPage() {
     }, []);
 
     const handleCreateCookbook = async () => {
-        if (!newCookbookTitle) return;
-
+        if (!newCookbookTitle || !coverImage) return;
+      
         try {
             const response = await axios.post('/cookbook', {
                 title: newCookbookTitle,
                 isPublic,
+                coverImage,
             });
-
             setCookbooks([...cookbooks, response.data]);
             setNewCookbookTitle('');
             setIsPublic(false);
+            setCoverImage('');
             setView('cookbooks');
         } catch (err) {
             console.error('Error creating cookbook:', err);
@@ -51,7 +53,7 @@ function CookbookPage() {
     const togglePrivacy = async (id, currentStatus) => {
         try {
             const updatedCookbook = await axios.put(`/cookbook/${id}`, { isPublic: !currentStatus });
-            setCookbooks(cookbooks.map(cookbook => 
+            setCookbooks(cookbooks.map(cookbook =>
                 cookbook._id === id ? { ...cookbook, isPublic: updatedCookbook.data.isPublic } : cookbook
             ));
         } catch (err) {
@@ -62,16 +64,15 @@ function CookbookPage() {
     return (
         <div className="p-6 max-w-4xl mx-auto">
             <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">Your Cookbooks</h1>
-            
             <div className="flex justify-center space-x-8 mb-6">
-                <button 
-                    className={`text-lg font-medium pb-2 ${view === 'cookbooks' ? 'border-b-2 border-red-500 text-red-500' : 'text-gray-600'} transition`} 
+                <button
+                    className={`text-lg font-medium pb-2 ${view === 'cookbooks' ? 'border-b-2 border-red-500 text-red-500' : 'text-gray-600'} transition`}
                     onClick={() => setView('cookbooks')}
                 >
                     Cookbooks
                 </button>
-                <button 
-                    className={`text-lg font-medium pb-2 ${view === 'create' ? 'border-b-2 border-red-500 text-red-500' : 'text-gray-600'} transition`} 
+                <button
+                    className={`text-lg font-medium pb-2 ${view === 'create' ? 'border-b-2 border-red-500 text-red-500' : 'text-gray-600'} transition`}
                     onClick={() => setView('create')}
                 >
                     Create
@@ -91,6 +92,27 @@ function CookbookPage() {
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200"
                         />
                     </div>
+                    <div className="mb-4">
+                        <label className="block text-gray-700 font-medium mb-2">Select a Cover</label>
+                        <div className="grid grid-cols-3 gap-2">
+                            {[...Array(9)].map((_, i) => {
+                            const filename = `cover${i + 1}.JPG`;
+                            return (
+                                <img
+                                key={filename}
+                                src={`/${filename}`}
+                                alt={`Cover ${i + 1}`}
+                                className={`cursor-pointer rounded-lg border-4 ${coverImage === filename ? 'border-blue-500' : 'border-transparent'}`}
+                                onClick={() => setCoverImage(filename)}
+                                />
+                            );
+                            })}
+                        </div>
+                        {!coverImage && (
+                            <p className="text-sm text-red-500 mt-1">Please select a cover image.</p>
+                        )}
+                    </div>
+
                     <div className="flex items-center justify-between mb-6">
                         <label className="text-gray-700 font-medium">Privacy</label>
                         <button 
@@ -101,38 +123,54 @@ function CookbookPage() {
                             {isPublic ? 'Public' : 'Private'}
                         </button>
                     </div>
+
                     <button 
                         onClick={handleCreateCookbook} 
                         className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition"
+                        disabled={!coverImage}
                     >
                         Create Cookbook
                     </button>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     {cookbooks.length > 0 ? (
                         cookbooks.map((cookbook) => (
-                            <div key={cookbook._id} className="relative bg-gray-100 rounded-lg shadow-md p-4 hover:shadow-lg transition">
-                                <button 
-                                    onClick={() => handleDeleteCookbook(cookbook._id)} 
-                                    className="absolute top-2 right-2 text-red-500 hover:text-red-700 transition"
+                            <div
+                              key={cookbook._id}
+                              className="relative rounded-lg overflow-hidden shadow hover:shadow-lg transition group"
+                            >
+                              <Link to={`/cookbook/${cookbook._id}`} className="block w-full h-64">
+                                <img
+                                  src={`/${cookbook.coverImage || 'cover1.JPG'}`}
+                                  alt={`${cookbook.title} Cover`}
+                                  className="w-full h-full object-cover"
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                  <div className="text-white text-lg font-semibold bg-black/50 px-3 py-1 rounded-md translate-y-[-20%] text-center">
+                                    {cookbook.title}
+                                  </div>
+                                </div>
+                              </Link>
+
+                              <button
+                                onClick={() => handleDeleteCookbook(cookbook._id)}
+                                className="absolute top-2 right-2 bg-white/80 text-gray-500 hover:text-red-600 p-1.5 rounded-full z-5 transition"
                                 >
-                                    ❌
+                                <svg className="w-4 h-4 fill-current" viewBox="0 0 36 36">
+                                    <path d="M6,9V31a2.93,2.93,0,0,0,2.86,3H27.09A2.93,2.93,0,0,0,30,31V9Zm9,20H13V14h2Zm8,0H21V14h2Z"></path>
+                                    <path d="M30.73,5H23V4A2,2,0,0,0,21,2h-6.2A2,2,0,0,0,13,4V5H5A1,1,0,1,0,5,7H30.73a1,1,0,0,0,0-2Z"></path>
+                                    <rect x="0" y="0" width="36" height="36" fillOpacity="0" />
+                                </svg>
                                 </button>
-                                <button 
-                                    onClick={() => togglePrivacy(cookbook._id, cookbook.isPublic)} 
-                                    className="absolute bottom-2 right-2 text-gray-700 hover:text-gray-900 transition"
+                                <button
+                                    onClick={() => togglePrivacy(cookbook._id, cookbook.isPublic)}
+                                    className="absolute bottom-2 right-2 bg-white/80 text-gray-700 hover:text-gray-900 p-1.5 rounded-full z-5"
                                 >
-                                    {cookbook.isPublic ? <FaLockOpen size={20} /> : <FaLock size={20} />}
+                                    {cookbook.isPublic ? <FaLockOpen size={18} /> : <FaLock size={18} />}
                                 </button>
-                                <Link to={`/cookbook/${cookbook._id}`}>
-                                    <div className="h-40 bg-gray-300 rounded-lg mb-3 flex items-center justify-center">
-                                        <span className="text-gray-500">Cover Photo TBD</span>
-                                    </div>
-                                    <h3 className="text-lg font-semibold text-gray-700">{cookbook.title}</h3>
-                                </Link>
                             </div>
-                        ))
+                          ))
                     ) : (
                         <p className="text-center text-gray-700">No cookbooks created yet. Click "Create Cookbook" to add one.</p>
                     )}

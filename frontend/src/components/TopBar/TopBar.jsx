@@ -156,7 +156,7 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
             </div>
 
             {showSearchBar && (
-                <div className="relative flex flex-col w-64" ref={filterRef}>
+                <div className="search-container" ref={filterRef}>
                     <input
                         type="text"
                         placeholder="Search recipes..."
@@ -182,7 +182,7 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
             )}
 
             {showUserSearchBar && (
-                <div className="relative flex flex-col w-64">
+                <div className="search-container">
                     <input
                         type="text"
                         placeholder="Find friends..."

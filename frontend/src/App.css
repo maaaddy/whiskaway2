@@ -17,7 +17,7 @@ h1 {
   @apply text-4xl font-bold;
 }
 
-/* Background Color to match cover photo :) --------------- */
+/* Background spacing to account for topbar --------------- */
 .back {
   @apply py-20;
 }
@@ -87,7 +87,7 @@ h1 {
 
 
 .search-container {
-  @apply relative w-full max-w-3xl;
+  @apply relative flex flex-col w-2/5;
 }
 
 .search-input {

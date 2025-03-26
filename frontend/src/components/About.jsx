@@ -44,6 +44,8 @@ function About() {
             <p>pencil icon small for under profile photo to make obvious when editing.</p>
             <p>draw out what the recipe detail page should look like. fr.</p>
             <p>notifications (bell icon?)</p>
+            <p>Are you sure? Notification for cookbook deletion</p>
+            <p>Are you sure? Notification for recipe removing from cookbook</p>
             <div className='pb-24'></div>
         </div>
     );
