@@ -47,6 +47,7 @@ function About() {
             <p>Are you sure? Notification for cookbook deletion</p>
             <p>Are you sure? Notification for recipe removing from cookbook</p>
             <p>Check if public cookbooks are empty, if so, do not display on the person's profile.</p>
+            <p>make it so people can't send blank chat messages..</p>
             <div className='pb-24'></div>
         </div>
     );
