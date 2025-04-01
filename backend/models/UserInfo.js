@@ -17,6 +17,10 @@ const UserInfoSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'UserInfo',
     }],
+    friendRequests: [{ 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'UserInfo',
+    }],
     profilePic: {
         type: Buffer,
     },

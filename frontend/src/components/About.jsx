@@ -46,6 +46,7 @@ function About() {
             <p>notifications (bell icon?)</p>
             <p>Are you sure? Notification for cookbook deletion</p>
             <p>Are you sure? Notification for recipe removing from cookbook</p>
+            <p>Check if public cookbooks are empty, if so, do not display on the person's profile.</p>
             <div className='pb-24'></div>
         </div>
     );

@@ -12,23 +12,47 @@ function ProfilePage() {
     const [currentUser, setCurrentUser] = useState(null);
     const [editMode, setEditMode] = useState(false);
     const [updatedProfile, setUpdatedProfile] = useState({ fName: '', lName: '', bio: '', profilePic: null });
+    const [isFriend, setIsFriend] = useState(false);
+    const [requestSent, setRequestSent] = useState(false);
+    const [userInfoId, setUserInfoId] = useState(null);
+    const [friendCount, setFriendCount] = useState(0);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const profileRes = await axios.get(username ? `/profile/${username}` : `/profile`);
-                setUserData(profileRes.data);
-                setUpdatedProfile({
-                    fName: profileRes.data.fName,
-                    lName: profileRes.data.lName,
-                    bio: profileRes.data.bio,
-                    profilePic: profileRes.data.profilePic,
-                });
                 const currentUserRes = await axios.get(`/profile`);
+                setUserData(profileRes.data);
+
+                const friendsRes = await axios.get(`/friends/${profileRes.data.userInfo}`);
+                setFriendCount(friendsRes.data.length || 0);
+
+                setUpdatedProfile({
+                fName: profileRes.data.fName,
+                lName: profileRes.data.lName,
+                bio: profileRes.data.bio,
+                profilePic: profileRes.data.profilePic,
+                });
+
                 setCurrentUser(currentUserRes.data.username);
                 if (profileRes.data.username) {
                     const cookbooksRes = await axios.get(`/cookbooks/user/${profileRes.data.username}`);
                     setCookbooks(cookbooksRes.data.filter(cookbook => cookbook.isPublic));
+                }
+                setUserInfoId(currentUserRes.data.userInfo);
+
+                if (profileRes.data.userInfo !== currentUserRes.data.userInfo) {
+                    const recipientInfo = await axios.get(`/friend-requests/${profileRes.data.userInfo}`);
+                    const alreadySent = recipientInfo.data.some(req => req._id === currentUserRes.data.userInfo);
+                    setRequestSent(alreadySent);
+
+                    const friendsList = await axios.get(`/friends/${currentUserRes.data.userInfo}`);
+                    
+                    const alreadyFriend = friendsList.data.some(
+                        friend => friend.userInfo?.toString() === profileRes.data.userInfo?.toString()
+                      );
+                                          
+                    setIsFriend(alreadyFriend);
                 }
             } catch (err) {
                 console.error(err);
@@ -69,6 +93,19 @@ function ProfilePage() {
     
     const copyProfileLink = () => navigator.clipboard.writeText(`http://localhost:3000/profile/${username || userData.username}`).then(() => alert('Profile link copied!'));
 
+    const sendFriendRequest = async () => {
+        try {
+          await axios.post('/friend-request', {
+            fromId: userInfoId,
+            toId: userData.userInfo,
+          });
+          setRequestSent(true);
+        } catch (err) {
+          console.error('Error sending friend request:', err);
+          alert('Failed to send friend request.');
+        }
+    };
+      
     if (loading) return <p>Loading...</p>;
     if (error) return <p>{error}</p>;
     if (!userData) return <p>No user data found.</p>;
@@ -110,13 +147,26 @@ function ProfilePage() {
                             <span className="text-sm font-medium">{userData.username}</span>
                         </p>
                         <p className="text-gray-600">{userData.bio}</p>
-                        <p>{userData.friends?.length || 0} friends</p>
+                        <p>{friendCount} friend{friendCount === 1 ? '' : 's'}</p>
                         <div className="flex justify-center gap-4 mt-4">
                             <button onClick={copyProfileLink} className="bg-blue-200 rounded-full px-4 py-2 font-semibold">Share</button>
+
                             {currentUser === userData.username ? (
-                                <button onClick={handleEditToggle} className="bg-blue-200 rounded-full px-4 py-2 font-semibold">Edit Profile</button>
+                                <button onClick={handleEditToggle} className="bg-blue-200 rounded-full px-4 py-2 font-semibold">
+                                    Edit Profile
+                                </button>
+                            ) : isFriend ? (
+                                <button disabled className="bg-gray-300 rounded-full px-4 py-2 font-semibold cursor-default">
+                                    Friends ✓
+                                </button>
+                            ) : requestSent ? (
+                                <button disabled className="bg-yellow-200 rounded-full px-4 py-2 font-semibold cursor-default">
+                                    Request Sent ✓
+                                </button>
                             ) : (
-                                <button className="bg-green-200 rounded-full px-4 py-2 font-semibold">Add Friend</button>
+                                <button onClick={sendFriendRequest} className="bg-green-200 rounded-full px-4 py-2 font-semibold">
+                                    Add Friend +
+                                </button>
                             )}
                         </div>
                     </>
