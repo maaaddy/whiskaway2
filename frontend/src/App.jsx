@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from './components/HomePage/HomePage';
 import CreatePage from './components/CreatePage/CreatePage';
 import About from './components/About';
-import MessagePage from './components/MessagePage/MessagePage';
+import ChatPage from './components/ChatPage/ChatPage';
 import CookbookPage from './components/CookbookPage/CookbookPage';
 import CookbookDetailPage from './components/CookbookDetailPage/CookbookDetailPage';
 import BottomNav from './components/BottomNav/BottomNav';
@@ -15,6 +15,8 @@ import SignUp from './components/User/SignUp';
 import Login from './components/User/Login';
 import GetStarted from './components/User/GetStarted';
 import axios from 'axios';
+import NotificationsPage from './components/NotificationsPage/NotificationsPage';
+import { UserContextProvider } from "./context/UserContext";
 
 function App() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -43,32 +45,35 @@ function App() {
     };
 
     return (
-        <BrowserRouter>
-            {isLoggedIn && <TopBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} setRecipeFilter={setRecipeFilter} onLogout={handleLogout} />}
-            <Routes>
-                {isLoggedIn ? ( 
-                    <>
-                        <Route path="/" element={<HomePage searchQuery={searchQuery} recipeFilter={recipeFilter} />} />
-                        <Route path="/recipe/:id" element={<RecipeDetailPage />} />
-                        <Route path="/add-recipe" element={<CreatePage />} />
-                        <Route path="/profile/:username?" element={<ProfilePage />} />
-                        <Route path="/messages" element={<MessagePage />} />
-                        <Route path="/cookbook" element={<CookbookPage />} />
-                        <Route path="/cookbook/:id" element={<CookbookDetailPage />} />
-                        <Route path="/about" element={<About />} />
-                        <Route path="*" element={<Navigate to="/" />} />
-                    </>
-                ) : (
-                    <>
-                        <Route path="/" element={isLoggedIn ? <Navigate to="/home" /> : <GetStarted />} />
-                        <Route path="/login" element={<Login onLogin={handleLogin} />} />
-                        <Route path="/signup" element={<SignUp onSignUp={handleLogin} />} />
-                        <Route path="*" element={<GetStarted />} />
-                    </>
-                )}
-            </Routes>
-            {isLoggedIn && <BottomNav />}
-        </BrowserRouter>
+        <UserContextProvider>
+            <BrowserRouter>
+                {isLoggedIn && <TopBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} setRecipeFilter={setRecipeFilter} onLogout={handleLogout} />}
+                <Routes>
+                    {isLoggedIn ? ( 
+                        <>
+                            <Route path="/" element={<HomePage searchQuery={searchQuery} recipeFilter={recipeFilter} />} />
+                            <Route path="/recipe/:id" element={<RecipeDetailPage />} />
+                            <Route path="/add-recipe" element={<CreatePage />} />
+                            <Route path="/profile/:username?" element={<ProfilePage />} />
+                            <Route path="/messages" element={<ChatPage />} />
+                            <Route path="/cookbook" element={<CookbookPage />} />
+                            <Route path="/cookbook/:id" element={<CookbookDetailPage />} />
+                            <Route path="/about" element={<About />} />
+                            <Route path="/notifications" element={<NotificationsPage />} />
+                            <Route path="*" element={<Navigate to="/" />} />
+                        </>
+                    ) : (
+                        <>
+                            <Route path="/" element={isLoggedIn ? <Navigate to="/home" /> : <GetStarted />} />
+                            <Route path="/login" element={<Login onLogin={handleLogin} />} />
+                            <Route path="/signup" element={<SignUp onSignUp={handleLogin} />} />
+                            <Route path="*" element={<GetStarted />} />
+                        </>
+                    )}
+                </Routes>
+                {isLoggedIn && <BottomNav />}
+            </BrowserRouter>
+        </UserContextProvider>
     );
 }
 

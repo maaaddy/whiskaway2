@@ -6,6 +6,7 @@ const User = require('./models/User');
 const UserInfo = require('./models/UserInfo');
 const { hashPassword, comparePassword } = require('./helpers/auth');
 const Recipe = require('./models/Recipe');
+const Message = require('./models/Message');
 const Cookbook = require('./models/Cookbook');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
@@ -23,7 +24,6 @@ mongoose.connect(process.env.MONGO_URL)
   });
 
 const app = express();
-//app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.json({ limit: '10mb' })); // Allows JSON payloads up to 10MB
 app.use(express.urlencoded({ limit: '10mb', extended: true })); 
@@ -228,22 +228,18 @@ app.get('/search/users', async (req, res) => {
 
 // Friends ------------------------------------------------------
 app.post('/addFriend', async (req, res) => {
+  const { userId, friendId } = req.body;
+
   try {
-    const { userId, friendId } = req.body;
-
-    const userInfo = await UserInfo.findOne({ _id: userId });
-    const friendInfo = await UserInfo.findOne({ _id: friendId });
-
-    if (!userInfo || !friendInfo) {
-      return res.status(404).json({ error: 'User not found' });
-    }
+    const userInfo = await UserInfo.findById(userId);
+    if (!userInfo) return res.status(404).json({ error: 'User not found' });
 
     if (!userInfo.friends.includes(friendId)) {
       userInfo.friends.push(friendId);
       await userInfo.save();
     }
 
-    res.json({ message: 'Friend added successfully' });
+    res.status(200).json({ message: 'Friend added successfully' });
   } catch (error) {
     console.error('Error adding friend:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -254,17 +250,114 @@ app.get('/friends/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     const userInfo = await UserInfo.findById(userId).populate('friends');
+    if (!userInfo) return res.status(404).json({ error: 'UserInfo not found' });
 
-    if (!userInfo) {
-      return res.status(404).json({ error: 'User not found' });
-    }
+    const userDocs = await User.find({ userInfo: { $in: userInfo.friends.map(f => f._id) } });
 
-    res.json(userInfo.friends);
+    const mergedFriends = userDocs.map(user => {
+      const info = userInfo.friends.find(f => f._id.toString() === user.userInfo.toString());
+      return {
+        _id: user._id,
+        username: user.username,
+        userInfo: user.userInfo,
+        fName: info?.fName || '',
+        lName: info?.lName || '',
+        bio: info?.bio || ''
+      };
+    });
+
+    res.json(mergedFriends);
   } catch (error) {
     console.error('Error fetching friends:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+app.post('/friend-request', async (req, res) => {
+  const { fromId, toId } = req.body;
+
+  try {
+    const recipient = await UserInfo.findById(toId);
+    if (!recipient) return res.status(404).json({ error: 'Recipient not found' });
+
+    if (recipient.friendRequests.includes(fromId)) {
+      return res.status(400).json({ error: 'Request already sent' });
+    }
+
+    recipient.friendRequests.push(fromId);
+    await recipient.save();
+
+    res.json({ message: 'Friend request sent' });
+  } catch (err) {
+    console.error('Send friend request error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/friend-requests/:userInfoId', async (req, res) => {
+  try {
+    const userInfo = await UserInfo.findById(req.params.userInfoId).populate('friendRequests');
+    if (!userInfo) return res.status(404).json({ error: 'User not found' });
+
+    res.json(userInfo.friendRequests);
+  } catch (err) {
+    console.error('Get friend requests error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/friend-request/accept', async (req, res) => {
+  const { currentUserId, requesterId } = req.body;
+
+  try {
+    const currentUser = await UserInfo.findById(currentUserId);
+    const requester = await UserInfo.findById(requesterId);
+
+    if (!currentUser || !requester) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (!currentUser.friends.includes(requesterId)) {
+      currentUser.friends.push(requesterId);
+    }
+
+    if (!requester.friends.includes(currentUserId)) {
+      requester.friends.push(currentUserId);
+    }
+
+    currentUser.friendRequests = currentUser.friendRequests.filter(
+      id => id.toString() !== requesterId
+    );
+
+    await currentUser.save();
+    await requester.save();
+
+    res.json({ message: 'Friend request accepted' });
+  } catch (err) {
+    console.error('Error accepting request:', err);
+    res.status(500).json({ error: 'Server error..' });
+  }
+});
+
+app.post('/friend-request/deny', async (req, res) => {
+  const { currentUserId, requesterId } = req.body;
+
+  try {
+    const currentUser = await UserInfo.findById(currentUserId);
+    if (!currentUser) return res.status(404).json({ error: 'User not found' });
+
+    currentUser.friendRequests = currentUser.friendRequests.filter(
+      id => id.toString() !== requesterId
+    );
+
+    await currentUser.save();
+    res.json({ message: 'Friend request denied' });
+  } catch (err) {
+    console.error('Error denying request:', err);
+    res.status(500).json({ error: 'Server error..' });
+  }
+});
+
 // Cookbook stuff.. --------------------------------------------------
 const verifyToken = (req, res, next) => {
   const { token } = req.cookies;
@@ -447,6 +540,57 @@ app.get('/profilePic/:userId', async (req, res) => {
   } catch (error) {
       console.error(error);
       res.status(500).send('Error fetching profile picture');
+  }
+});
+
+// Attempt at chat part! -----------------------------------------
+app.get('/messages/:id', verifyToken, async (req, res) => {
+  const userId = req.userId;
+  const otherUserInfoId = req.params.id;
+
+  try {
+    const user = await User.findById(userId);
+    if (!user || !user.userInfo) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const myUserInfoId = user.userInfo.toString();
+
+    const messages = await Message.find({
+      $or: [
+        { sender: myUserInfoId, recipient: otherUserInfoId },
+        { sender: otherUserInfoId, recipient: myUserInfoId }
+      ]
+    }).sort({ createdAt: 1 });
+
+    res.json(messages);
+  } catch (err) {
+    console.error('Error fetching messages:', err);
+    res.status(500).json({ error: 'Error fetching messages' });
+  }
+});
+
+app.post('/messages', verifyToken, async (req, res) => {
+  const userId = req.userId;
+  const { recipient, text } = req.body;
+
+  try {
+    const user = await User.findById(userId);
+    if (!user || !user.userInfo) {
+      console.log("No user or userInfo found");
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const message = await Message.create({
+      sender: user.userInfo,
+      recipient,
+      text
+    });
+
+    res.status(201).json(message);
+  } catch (err) {
+    console.error("Error sending message:", err);
+    res.status(500).json({ error: 'Error sending message' });
   }
 });
 

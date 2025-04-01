@@ -2,8 +2,10 @@ import React, { useState, useRef, useEffect } from "react";
 import Select from "react-select";
 import { Link, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch, faInfoCircle, faCog, faSignOutAlt } from "@fortawesome/free-solid-svg-icons";
+import { faSearch, faBell, faCog, faSignOutAlt } from "@fortawesome/free-solid-svg-icons";
 import axios from 'axios';
+
+export let refreshFriendRequests = () => {};
 
 const mealTypeOptions = [
     { value: "", label: "All Meal Types" },
@@ -104,6 +106,8 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
     const [selectedIntolerance, setSelectedIntolerance] = useState([]);
     const [loggedInUsername, setLoggedInUsername] = useState(null);
 
+    const [requestCount, setRequestCount] = useState(0);
+
     useEffect(() => {
         const fetchCurrentUser = async () => {
             try {
@@ -115,6 +119,24 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
         };
         fetchCurrentUser();
     }, []);
+
+    useEffect(() => {
+        const fetchFriendRequests = async () => {
+          try {
+            const res = await axios.get("/profile");
+            const infoId = res.data.userInfo;
+      
+            const requestsRes = await axios.get(`/friend-requests/${infoId}`);
+            setRequestCount(requestsRes.data.length);
+          } catch (err) {
+            console.error("TopBar: Error loading friend requests:", err);
+          }
+        };
+      
+        refreshFriendRequests = fetchFriendRequests;
+        fetchFriendRequests();
+      }, []);
+      
 
     useEffect(() => {
         if (userSearchQuery.length > 0 && loggedInUsername) {
@@ -213,10 +235,15 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
             )}
 
             <div className="flex items-center space-x-5 text-teal-700">
-                <Link to="/about" className="hover:text-teal-500 transition">
-                    <FontAwesomeIcon icon={faInfoCircle} size="lg" />
+                <Link to="/notifications" className="relative hover:text-yellow-600 transition">
+                <FontAwesomeIcon icon={faBell} size="lg" />
+                    {requestCount > 0 && (
+                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center z-50">
+                        {requestCount}
+                        </span>
+                    )}
                 </Link>
-                <Link to="/settings" className="hover:text-gray-700 transition">
+                <Link to="/about" className="hover:text-gray-700 transition">
                     <FontAwesomeIcon icon={faCog} size="lg" />
                 </Link>
                 <a href="/" onClick={(e) => { e.preventDefault(); onLogout(); }} className="hover:text-red-500 transition">

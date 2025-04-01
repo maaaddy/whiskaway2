@@ -1,21 +1,21 @@
-import axios from 'axios';
-import { createContext, useState, useEffect } from 'react';
+import axios from "axios";
+import { createContext, useEffect, useState } from "react";
 
 export const UserContext = createContext({});
 
-export function UserContextProvider({stuff}) {
-    const [user, setUser] = useState(null);
+export function UserContextProvider({children}) {
+    const [username, setUsername] = useState(null);
+    const [id, setId] = useState(null);
+
     useEffect(() => {
-        if(!user){
-            axios.get('/profile').then(({data}) => {
-                setUser(data);
-            })
-        }
-    }, [])
+        axios.get('/profile', {withCredentials:true}).then(response => {
+            setId(response.data._id);
+            setUsername(response.data.username);
+        });
+    }, []);
     return (
-        <UserContext.Provider value={{user, setUser}}>
-            {stuff}
+        <UserContext.Provider value={{username, setUsername, id, setId}}>
+            {children}
         </UserContext.Provider>
     );
-
-};
+}
