@@ -36,7 +36,7 @@ function App() {
 
     const handleLogout = async () => {
         try {
-            await axios.post('/logout');
+            await axios.post('/api/logout');
             setIsLoggedIn(false);
             localStorage.removeItem('token');
         } catch (error) {

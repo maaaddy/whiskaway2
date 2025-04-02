@@ -91,7 +91,7 @@ function ProfilePage() {
         }
     };
     
-    const copyProfileLink = () => navigator.clipboard.writeText(`http://whiskaway.food/profile/${username || userData.username}`).then(() => alert('Profile link copied!'));
+    const copyProfileLink = () => navigator.clipboard.writeText(`https://whiskaway.food/profile/${username || userData.username}`).then(() => alert('Profile link copied!'));
 
     const sendFriendRequest = async () => {
         try {
