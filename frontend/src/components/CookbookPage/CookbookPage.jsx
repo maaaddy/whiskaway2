@@ -13,7 +13,7 @@ function CookbookPage() {
     useEffect(() => {
         const fetchCookbooks = async () => {
             try {
-                const response = await axios.get('/cookbook');
+                const response = await axios.get('/api/cookbook');
                 setCookbooks(response.data);
             } catch (err) {
                 console.error('Error fetching cookbooks:', err);
@@ -43,7 +43,7 @@ function CookbookPage() {
 
     const handleDeleteCookbook = async (id) => {
         try {
-            await axios.delete(`/cookbook/${id}`);
+            await axios.delete(`/api/cookbook/${id}`);
             setCookbooks(cookbooks.filter(cookbook => cookbook._id !== id));
         } catch (err) {
             console.error('Error deleting cookbook:', err);
@@ -52,7 +52,7 @@ function CookbookPage() {
 
     const togglePrivacy = async (id, currentStatus) => {
         try {
-            const updatedCookbook = await axios.put(`/cookbook/${id}`, { isPublic: !currentStatus });
+            const updatedCookbook = await axios.put(`/api/cookbook/${id}`, { isPublic: !currentStatus });
             setCookbooks(cookbooks.map(cookbook =>
                 cookbook._id === id ? { ...cookbook, isPublic: updatedCookbook.data.isPublic } : cookbook
             ));

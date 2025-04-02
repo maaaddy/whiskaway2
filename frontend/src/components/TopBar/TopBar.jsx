@@ -111,7 +111,7 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
     useEffect(() => {
         const fetchCurrentUser = async () => {
             try {
-                const response = await axios.get("/profile");
+                const response = await axios.get("/api/profile");
                 setLoggedInUsername(response.data.username);
             } catch (error) {
                 console.error("Error fetching logged-in user:", error);
@@ -123,10 +123,10 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
     useEffect(() => {
         const fetchFriendRequests = async () => {
           try {
-            const res = await axios.get("/profile");
+            const res = await axios.get("/api/profile");
             const infoId = res.data.userInfo;
       
-            const requestsRes = await axios.get(`/friend-requests/${infoId}`);
+            const requestsRes = await axios.get(`/api/friend-requests/${infoId}`);
             setRequestCount(requestsRes.data.length);
           } catch (err) {
             console.error("TopBar: Error loading friend requests:", err);
@@ -140,7 +140,7 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
 
     useEffect(() => {
         if (userSearchQuery.length > 0 && loggedInUsername) {
-            axios.get(`/search/users?query=${userSearchQuery}&currentUser=${loggedInUsername}`)
+            axios.get(`/api/search/users?query=${userSearchQuery}&currentUser=${loggedInUsername}`)
                 .then(res => setSearchResults(res.data))
                 .catch(err => console.error("User search failed:", err));
         } else {

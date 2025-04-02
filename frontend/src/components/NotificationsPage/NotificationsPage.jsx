@@ -10,11 +10,11 @@ export default function NotificationsPage() {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        const res = await axios.get('/profile');
+        const res = await axios.get('/api/profile');
         const infoId = res.data.userInfo;
         setUserInfoId(infoId);
 
-        const reqs = await axios.get(`/friend-requests/${infoId}`);
+        const reqs = await axios.get(`/api/friend-requests/${infoId}`);
         setRequests(reqs.data);
       } catch (err) {
         console.error('Error loading friend requests:', err);

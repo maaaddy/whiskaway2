@@ -15,7 +15,7 @@ function CookbookDetailPage() {
     useEffect(() => {
         const fetchCookbook = async () => {
             try {
-                const response = await axios.get(`/cookbook/${id}`);
+                const response = await axios.get(`/api/cookbook/${id}`);
                 setCookbook(response.data);
 
                 const initialRecipePromises = response.data.recipes.slice(0, 5).map((recipeId) =>

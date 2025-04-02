@@ -20,11 +20,11 @@ function ProfilePage() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const profileRes = await axios.get(username ? `/profile/${username}` : `/profile`);
-                const currentUserRes = await axios.get(`/profile`);
+                const profileRes = await axios.get(username ? `/api/profile/${username}` : `/api/profile`);
+                const currentUserRes = await axios.get(`/api/profile`);
                 setUserData(profileRes.data);
 
-                const friendsRes = await axios.get(`/friends/${profileRes.data.userInfo}`);
+                const friendsRes = await axios.get(`/api/friends/${profileRes.data.userInfo}`);
                 setFriendCount(friendsRes.data.length || 0);
 
                 setUpdatedProfile({
@@ -36,17 +36,17 @@ function ProfilePage() {
 
                 setCurrentUser(currentUserRes.data.username);
                 if (profileRes.data.username) {
-                    const cookbooksRes = await axios.get(`/cookbooks/user/${profileRes.data.username}`);
+                    const cookbooksRes = await axios.get(`/api/cookbooks/user/${profileRes.data.username}`);
                     setCookbooks(cookbooksRes.data.filter(cookbook => cookbook.isPublic));
                 }
                 setUserInfoId(currentUserRes.data.userInfo);
 
                 if (profileRes.data.userInfo !== currentUserRes.data.userInfo) {
-                    const recipientInfo = await axios.get(`/friend-requests/${profileRes.data.userInfo}`);
+                    const recipientInfo = await axios.get(`/api/friend-requests/${profileRes.data.userInfo}`);
                     const alreadySent = recipientInfo.data.some(req => req._id === currentUserRes.data.userInfo);
                     setRequestSent(alreadySent);
 
-                    const friendsList = await axios.get(`/friends/${currentUserRes.data.userInfo}`);
+                    const friendsList = await axios.get(`/api/friends/${currentUserRes.data.userInfo}`);
                     
                     const alreadyFriend = friendsList.data.some(
                         friend => friend.userInfo?.toString() === profileRes.data.userInfo?.toString()
@@ -83,7 +83,7 @@ function ProfilePage() {
     
     const handleSave = async () => {
         try {
-            await axios.put(`/profile/update`, updatedProfile);
+            await axios.put(`/api/profile/update`, updatedProfile);
             setUserData(prev => ({ ...prev, ...updatedProfile }));
             setEditMode(false);
         } catch (error) {
@@ -91,7 +91,7 @@ function ProfilePage() {
         }
     };
     
-    const copyProfileLink = () => navigator.clipboard.writeText(`http://localhost:3000/profile/${username || userData.username}`).then(() => alert('Profile link copied!'));
+    const copyProfileLink = () => navigator.clipboard.writeText(`http://whiskaway.food/profile/${username || userData.username}`).then(() => alert('Profile link copied!'));
 
     const sendFriendRequest = async () => {
         try {

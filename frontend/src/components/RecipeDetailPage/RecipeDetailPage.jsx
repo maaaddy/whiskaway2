@@ -40,7 +40,7 @@ function RecipeDetailPage() {
 
         const fetchCookbooks = async () => {
             try {
-                const response = await axios.get('/cookbook');
+                const response = await axios.get('/api/cookbook');
                 setCookbooks(response.data);
             } catch (err) {
                 console.error('Error fetching cookbooks:', err);

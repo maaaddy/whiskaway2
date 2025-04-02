@@ -31,7 +31,7 @@ function SignUp({ onSignUp }) {
         e.preventDefault();
         try {
             const intoleranceValues = intolerances.map(item => item.value);
-            const { data } = await axios.post('/register', { username, password, fName, lName, bio, intolerances: intoleranceValues });
+            const { data } = await axios.post('/api/register', { username, password, fName, lName, bio, intolerances: intoleranceValues });
             if (data.error) {
                 console.log(data.error);
             } else {

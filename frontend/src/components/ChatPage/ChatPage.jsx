@@ -13,10 +13,10 @@ function ChatPage() {
   useEffect(() => {
     const fetchFriends = async () => {
       try {
-        const profileRes = await axios.get('/profile');
+        const profileRes = await axios.get('/api/profile');
         const fetchedUserInfoId = profileRes.data.userInfo;
         setUserInfoId(fetchedUserInfoId);
-        const friendsRes = await axios.get(`/friends/${fetchedUserInfoId}`);
+        const friendsRes = await axios.get(`/api/friends/${fetchedUserInfoId}`);
         setFriends(friendsRes.data);
       } catch (err) {
         console.error("Failed to load friends:", err);
@@ -30,7 +30,7 @@ function ChatPage() {
       if (selectedUser) {
         try {
           const otherUserInfoId = selectedUser.userInfo || selectedUser._id;
-          const res = await axios.get(`/messages/${otherUserInfoId}`);
+          const res = await axios.get(`/api/messages/${otherUserInfoId}`);
           setMessages(res.data);
         } catch (err) {
           console.error("Failed to load messages:", err);
