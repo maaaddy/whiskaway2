@@ -59,7 +59,7 @@ function RecipeDetailPage() {
         }
     
         try {
-            await axios.post(`/cookbook/${selectedCookbook}/addRecipe`, {
+            await axios.post(`/api/cookbook/${selectedCookbook}/addRecipe`, {
                 recipeId: id,
             });
             alert('Recipe added to cookbook successfully!');

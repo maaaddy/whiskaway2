@@ -26,7 +26,7 @@ function CookbookPage() {
         if (!newCookbookTitle || !coverImage) return;
       
         try {
-            const response = await axios.post('/cookbook', {
+            const response = await axios.post('/api/cookbook', {
                 title: newCookbookTitle,
                 isPublic,
                 coverImage,

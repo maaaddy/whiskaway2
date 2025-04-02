@@ -95,7 +95,7 @@ function ProfilePage() {
 
     const sendFriendRequest = async () => {
         try {
-          await axios.post('/friend-request', {
+          await axios.post('/api/friend-request', {
             fromId: userInfoId,
             toId: userData.userInfo,
           });

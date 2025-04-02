@@ -10,7 +10,7 @@ function Login({ onLogin }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const {data} = await axios.post('/login', {username, password});
+            const {data} = await axios.post('/api/login', {username, password});
             if (data.error) {
                 console.log(data.error);
             } else {

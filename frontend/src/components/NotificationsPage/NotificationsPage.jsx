@@ -27,7 +27,7 @@ export default function NotificationsPage() {
   }, []);
 
   const handleAccept = async (requesterId) => {
-    await axios.post('/friend-request/accept', {
+    await axios.post('/api/friend-request/accept', {
       currentUserId: userInfoId,
       requesterId
     });
@@ -36,7 +36,7 @@ export default function NotificationsPage() {
   };
   
   const handleDeny = async (requesterId) => {
-    await axios.post('/friend-request/deny', {
+    await axios.post('/api/friend-request/deny', {
       currentUserId: userInfoId,
       requesterId
     });

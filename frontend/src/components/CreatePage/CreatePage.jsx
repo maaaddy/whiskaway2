@@ -18,7 +18,7 @@ function CreatePage() {
         ev.preventDefault();
         try {
             const newRecipe = { title, description, servings, link, image };
-            const response = await axios.post('/recipes', newRecipe);
+            const response = await axios.post('/api/recipes', newRecipe);
             setRecipes([...recipes, response.data]);
         } catch (err) {
             console.error('Error submitting recipe:', err);

@@ -51,7 +51,7 @@ function ChatPage() {
     const otherUserInfoId = selectedUser.userInfo || selectedUser._id;
 
     try {
-      const res = await axios.post('/messages', {
+      const res = await axios.post('/api/messages', {
         recipient: otherUserInfoId,
         text: newMessage,
       });
