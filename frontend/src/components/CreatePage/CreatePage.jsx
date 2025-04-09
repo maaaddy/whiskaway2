@@ -1,109 +1,284 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
+import Select from 'react-select';
+import { FaLock, FaLockOpen } from 'react-icons/fa';
+
+const mealTypeOptions = [
+  { value: 'main course', label: 'Main Course' },
+  { value: 'side dish', label: 'Side Dish' },
+  { value: 'dessert', label: 'Dessert' },
+  { value: 'appetizer', label: 'Appetizer' },
+  { value: 'salad', label: 'Salad' },
+  { value: 'bread', label: 'Bread' },
+  { value: 'breakfast', label: 'Breakfast' },
+  { value: 'soup', label: 'Soup' },
+  { value: 'beverage', label: 'Beverage' },
+  { value: 'sauce', label: 'Sauce' },
+  { value: 'lunch', label: 'Lunch' },
+  { value: 'dinner', label: 'Dinner' },
+  { value: 'marinade', label: 'Marinade' },
+  { value: 'fingerfood', label: 'Finger Food' },
+  { value: 'snack', label: 'Snack' },
+  { value: 'drink', label: 'Drink' }
+];
+
+const cuisineOptions = [
+  { value: 'african', label: 'African' },
+  { value: 'asian', label: 'Asian' },
+  { value: 'american', label: 'American' },
+  { value: 'british', label: 'British' },
+  { value: 'cajun', label: 'Cajun' },
+  { value: 'caribbean', label: 'Caribbean' },
+  { value: 'chinese', label: 'Chinese' },
+  { value: 'eastern european', label: 'Eastern European' },
+  { value: 'european', label: 'European' },
+  { value: 'french', label: 'French' },
+  { value: 'german', label: 'German' },
+  { value: 'greek', label: 'Greek' },
+  { value: 'indian', label: 'Indian' },
+  { value: 'irish', label: 'Irish' },
+  { value: 'italian', label: 'Italian' },
+  { value: 'japanese', label: 'Japanese' },
+  { value: 'jewish', label: 'Jewish' },
+  { value: 'korean', label: 'Korean' },
+  { value: 'latin american', label: 'Latin American' },
+  { value: 'mediterranean', label: 'Mediterranean' },
+  { value: 'mexican', label: 'Mexican' },
+  { value: 'middle eastern', label: 'Middle Eastern' },
+  { value: 'nordic', label: 'Nordic' },
+  { value: 'southern', label: 'Southern' },
+  { value: 'spanish', label: 'Spanish' },
+  { value: 'thai', label: 'Thai' },
+  { value: 'vietnamese', label: 'Vietnamese' }
+];
+
+const dietOptions = [
+  { value: 'gluten free', label: 'Gluten-Free' },
+  { value: 'ketogenic', label: 'Ketogenic' },
+  { value: 'vegetarian', label: 'Vegetarian' },
+  { value: 'lacto vegetarian', label: 'Lacto-Vegetarian' },
+  { value: 'ovo vegetarian', label: 'Ovo-Vegetarian' },
+  { value: 'vegan', label: 'Vegan' },
+  { value: 'pescetarian', label: 'Pescetarian' },
+  { value: 'paleo', label: 'Paleo' },
+  { value: 'primal', label: 'Primal' },
+  { value: 'low fodmap', label: 'Low FODMAP' },
+  { value: 'whole30', label: 'Whole30' }
+];
+
+const intoleranceOptions = [
+  { value: 'dairy', label: 'Dairy-Free' },
+  { value: 'egg', label: 'Egg-Free' },
+  { value: 'gluten', label: 'Gluten-Free' },
+  { value: 'grain', label: 'Grain-Free' },
+  { value: 'peanut', label: 'Peanut-Free' },
+  { value: 'seafood', label: 'Seafood-Free' },
+  { value: 'sesame', label: 'Sesame-Free' },
+  { value: 'shellfish', label: 'Shellfish-Free' },
+  { value: 'soy', label: 'Soy-Free' },
+  { value: 'sulfite', label: 'Sulfite-Free' },
+  { value: 'tree nut', label: 'Tree Nut-Free' },
+  { value: 'wheat', label: 'Wheat-Free' }
+];
 
 function CreatePage() {
+    const [view, setView] = useState('myRecipes');
     const [recipes, setRecipes] = useState([]);
+  
     const [title, setTitle] = useState('');
-    const [description, setDescription] = useState('');
-    const [image, setImage] = useState(null);
-    const [link, setLink] = useState('');
+    const [prepTime, setPrepTime] = useState('');
+    const [cookTime, setCookTime] = useState('');
     const [servings, setServings] = useState('');
-
+    const [ingredients, setIngredients] = useState(['']);
+    const [instructions, setInstructions] = useState(['']);
+    const [tags, setTags] = useState({ mealType: [], cuisine: [], diet: [], intolerance: [] });
+    const [cookbookId, setCookbookId] = useState('');
+    const [cookbooks, setCookbooks] = useState([]);
+    const [isPublic, setIsPublic] = useState(true);
+    const [link, setLink] = useState('');
+    const [image, setImage] = useState(null);
+  
+    const handleIngredientChange = (index, value) => {
+      const newIngredients = [...ingredients];
+      newIngredients[index] = value;
+      setIngredients(newIngredients);
+    };
+  
+    const addIngredient = () => setIngredients([...ingredients, '']);
+  
+    const handleInstructionChange = (index, value) => {
+      const newInstructions = [...instructions];
+      newInstructions[index] = value;
+      setInstructions(newInstructions);
+    };
+  
+    const addInstruction = () => setInstructions([...instructions, '']);
+  
     const handleImageUpload = (event) => {
-        const file = event.target.files[0];
-        setImage(file);
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.onloadend = () => setImage(reader.result);
+      if (file) reader.readAsDataURL(file);
     };
-
-    const handleSubmit = async (ev) => {
-        ev.preventDefault();
-        try {
-            const newRecipe = { title, description, servings, link, image };
-            const response = await axios.post('/api/recipes', newRecipe);
-            setRecipes([...recipes, response.data]);
-        } catch (err) {
-            console.error('Error submitting recipe:', err);
-        }
+  
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      try {
+        const recipeData = {
+          title,
+          image,
+          instructions,
+          ingredients,
+          prepTime,
+          cookTime,
+          servings,
+          link,
+          tags,
+          isPublic,
+          cookbookId
+        };
+        await axios.post('/api/recipes', recipeData);
+        alert('Recipe created!');
+        setView('myRecipes');
+      } catch (err) {
+        console.error('Error submitting recipe:', err);
+      }
     };
-
+  
+    const fetchUserRecipes = async () => {
+      try {
+        const res = await axios.get('/api/my-recipes');
+        setRecipes(res.data);
+      } catch (err) {
+        console.error('Failed to fetch user recipes:', err);
+      }
+    };
+  
+    useEffect(() => {
+      if (view === 'myRecipes') {
+        fetchUserRecipes();
+      }
+    }, [view]);
+  
     return (
-        <div className='back'>
-        <div className="max-w-screen-lg mx-auto p-6 flex flex-col">
-            <div className="flex flex-col md:flex-row gap-8 mt-6 items-start">
-    
-                <div className="w-full md:w-1/2 flex pr-5">
-                    <div className="w-full h-[350px] border border-dashed border-gray-400 flex items-center justify-center bg-gray-100 rounded-3xl">
-                        {image ? (
-                            <img src={URL.createObjectURL(image)} alt="Preview" className="h-full w-full object-cover rounded-3xl" />
-                        ) : (
-                            <label className="cursor-pointer text-gray-500 text-center w-full h-full flex flex-col items-center justify-center">
-                                Drag & Drop or  
-                                <span className="text-teal-500 font-medium">Select a File</span>
-                                <input type="file" className="hidden" onChange={handleImageUpload} />
-                            </label>
-                        )}
+      <div className="p-6 max-w-5xl mx-auto back">
+        <div className="flex justify-center space-x-8 mb-6">
+          <button
+            className={`text-lg font-medium pb-2 ${view === 'myRecipes' ? 'border-b-2 border-teal-600 text-teal-600' : 'text-gray-600'} transition`}
+            onClick={() => setView('myRecipes')}
+          >
+            My Recipes
+          </button>
+          <button
+            className={`text-lg font-medium pb-2 ${view === 'create' ? 'border-b-2 border-teal-600 text-teal-600' : 'text-gray-600'} transition`}
+            onClick={() => setView('create')}
+          >
+            Create
+          </button>
+        </div>
+  
+        {view === 'myRecipes' ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {recipes.length > 0 ? (
+              recipes.map(recipe => (
+                <div key={recipe._id} className="relative rounded-lg overflow-hidden shadow hover:shadow-lg transition group">
+                  <div className="block w-full h-64 bg-gray-100">
+                    <img
+                      src={recipe.image ? `data:image/jpeg;base64,${recipe.image}` : ""}
+                      alt={recipe.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="text-white text-lg font-semibold bg-black/50 px-3 py-1 rounded-md text-center">
+                      {recipe.title}
                     </div>
+                  </div>
+                  <div className="absolute bottom-2 right-2 bg-white/80 p-1.5 rounded-full">
+                    {recipe.isPublic ? <FaLockOpen size={18} /> : <FaLock size={18} />}
+                  </div>
                 </div>
-
-                <div className="w-full md:w-1/2 flex flex-col">
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                            <label htmlFor="title" className="block text-gray-700 font-medium">Title</label>
-                            <input
-                                type="text"
-                                id="title"
-                                placeholder="Recipe title"
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                required
-                                className="w-full px-4 py-3 border border-gray-300 rounded-xl"
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="description" className="block text-gray-700 font-medium">Description</label>
-                            <textarea
-                                id="description"
-                                placeholder="Add a description..."
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                rows="3"
-                                className="w-full px-4 py-3 border border-gray-300 rounded-xl"
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="servings" className="block text-gray-700 font-medium">Serving Size</label>
-                            <input
-                                type="text"
-                                id="servings"
-                                placeholder="e.g. 4 servings"
-                                value={servings}
-                                onChange={(e) => setServings(e.target.value)}
-                                required
-                                className="w-full px-4 py-3 border border-gray-300 rounded-xl"
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="link" className="block text-gray-700 font-medium"> Link</label>
-                            <input
-                                type="text"
-                                id="link"
-                                placeholder="e.g. https://yourwebsite.com"
-                                value={link}
-                                onChange={(e) => setLink(e.target.value)}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-xl"
-                            />
-                        </div>
-                        <button
-                            type="submit"
-                            className="w-full px-6 py-3 bg-teal-500 text-white font-semibold rounded-full hover:bg-teal-400 transition-transform transform hover:scale-105 duration-300"
-                        >
-                            Publish Recipe
-                        </button>
-                    </form>
+              ))
+            ) : (
+              <p className="text-center text-gray-600 col-span-full">No recipes created yet.</p>
+            )}
+          </div>
+        ) : (
+        <div className="max-w-4xl mx-auto p-6">
+            <h2 className="text-3xl font-bold mb-6 text-center">New Recipe</h2>
+            <form onSubmit={handleSubmit} className="space-y-6">
+            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" className="w-full border p-2 rounded" required />
+            <div className="flex gap-4">
+                <input type="number" value={prepTime} onChange={(e) => setPrepTime(e.target.value)} placeholder="Prep Time (min)" className="w-full border p-2 rounded" />
+                <input type="number" value={cookTime} onChange={(e) => setCookTime(e.target.value)} placeholder="Cook Time (min)" className="w-full border p-2 rounded" />
+                <input type="text" value={servings} onChange={(e) => setServings(e.target.value)} placeholder="Servings" className="w-full border p-2 rounded" />
+            </div>
+        
+            <div>
+                <label className="font-semibold">Ingredients</label>
+                {ingredients.map((item, idx) => (
+                <input key={idx} value={item} onChange={(e) => handleIngredientChange(idx, e.target.value)} className="w-full mb-2 border p-2 rounded" />
+                ))}
+                <button type="button" onClick={addIngredient} className="text-blue-600 text-sm">+ Add Ingredient</button>
+            </div>
+        
+            <div>
+                <label className="font-semibold">Instructions</label>
+                {instructions.map((step, idx) => (
+                <textarea key={idx} value={step} onChange={(e) => handleInstructionChange(idx, e.target.value)} className="w-full mb-2 border p-2 rounded" rows="2" />
+                ))}
+                <button type="button" onClick={addInstruction} className="text-blue-600 text-sm">+ Add Step</button>
+            </div>
+        
+            <div className="space-y-4">
+                <div>
+                <label className="font-semibold block mb-2">Meal Type</label>
+                <Select isMulti options={mealTypeOptions} value={tags.mealType} onChange={(selected) => setTags(prev => ({ ...prev, mealType: selected }))} />
+                </div>
+                <div>
+                <label className="font-semibold block mb-2">Cuisine</label>
+                <Select isMulti options={cuisineOptions} value={tags.cuisine} onChange={(selected) => setTags(prev => ({ ...prev, cuisine: selected }))} />
+                </div>
+                <div>
+                <label className="font-semibold block mb-2">Diet</label>
+                <Select isMulti options={dietOptions} value={tags.diet} onChange={(selected) => setTags(prev => ({ ...prev, diet: selected }))} />
+                </div>
+                <div>
+                <label className="font-semibold block mb-2">Intolerances</label>
+                <Select isMulti options={intoleranceOptions} value={tags.intolerance} onChange={(selected) => setTags(prev => ({ ...prev, intolerance: selected }))} />
                 </div>
             </div>
+        
+            <div>
+                <label className="block font-medium mb-1">Add to Cookbook</label>
+                <select value={cookbookId} onChange={(e) => setCookbookId(e.target.value)} className="w-full border p-2 rounded">
+                <option value="">Select a Cookbook</option>
+                {cookbooks.map(cb => (
+                    <option key={cb._id} value={cb._id}>{cb.title}</option>
+                ))}
+                </select>
+            </div>
+        
+            <div>
+                <label className="block font-medium mb-1">Visibility</label>
+                <label className="inline-flex items-center">
+                <input type="checkbox" checked={isPublic} onChange={() => setIsPublic(!isPublic)} className="mr-2" />
+                {isPublic ? 'Public' : 'Private'}
+                </label>
+            </div>
+        
+            <input type="text" value={link} onChange={(e) => setLink(e.target.value)} placeholder="Optional Link" className="w-full border p-2 rounded" />
+            <input type="file" onChange={handleImageUpload} className="w-full" />
+        
+            <button type="submit" className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-3 rounded-xl">
+                Publish Recipe
+            </button>
+            </form>
         </div>
-        </div>
-    );    
-}
-
+        )}
+      </div>
+    );
+  }
+  
 export default CreatePage;

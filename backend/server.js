@@ -36,12 +36,12 @@ app.use(cookieParser());
 const PORT = 5000;
 // End Set Up -----------------------------------------------------------
 
-app.get('/test', (_req, res) => {
+app.get('/api/test', (_req, res) => {
   res.json('Test successful.');
 });
 
 // Login/User Stuff ---------------------------------------------------------
-app.post('/register', async (req, res) => {
+app.post('/api/register', async (req, res) => {
   try {
     const { username, password, fName, lName, bio } = req.body;
     if (!username) {
@@ -89,7 +89,7 @@ app.post('/register', async (req, res) => {
   }
 });
 
-app.post('/login', async (req, res) => {
+app.post('/api/login', async (req, res) => {
   try {
     const { username, password } = req.body;
     const user = await User.findOne({ username }).populate('userInfo');
@@ -117,12 +117,12 @@ app.post('/login', async (req, res) => {
   }
 });
 
-app.post('/logout', (req, res) => {
+app.post('/api/logout', (req, res) => {
   res.clearCookie('token');
   res.json({ message: 'Logged out successfully' });
 });
 
-app.get('/profile/:username?', async (req, res) => {
+app.get('/api/profile/:username?', async (req, res) => {
   const { token } = req.cookies;
   const { username } = req.params;
 
@@ -152,6 +152,11 @@ app.get('/profile/:username?', async (req, res) => {
           profilePicBase64 = `data:image/jpeg;base64,${user.userInfo.profilePic.toString('base64')}`;
         }
 
+        let coverImageBase64 = "";
+        if (user.userInfo.coverImage) {
+          coverImageBase64 = `data:image/jpeg;base64,${user.userInfo.coverImage.toString('base64')}`;
+        }
+
         res.json({
           _id: user.userInfo._id.toString(),
           username: user.username,
@@ -160,6 +165,7 @@ app.get('/profile/:username?', async (req, res) => {
           lName: user.userInfo.lName,
           bio: user.userInfo.bio,
           profilePic: profilePicBase64,
+          coverImage: coverImageBase64,
           friends: user.userInfo.friends.length,
         });
       } catch (error) {
@@ -169,7 +175,7 @@ app.get('/profile/:username?', async (req, res) => {
   });
 });
 
-app.put('/profile/update', async (req, res) => {
+app.put('/api/profile/update', async (req, res) => {
   const { token } = req.cookies;
   if (!token) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -186,7 +192,7 @@ app.put('/profile/update', async (req, res) => {
               return res.status(404).json({ error: "User not found" });
           }
 
-          const { fName, lName, bio, profilePic } = req.body;
+          const { fName, lName, bio, profilePic, coverImage } = req.body;
           user.userInfo.fName = fName || user.userInfo.fName;
           user.userInfo.lName = lName || user.userInfo.lName;
           user.userInfo.bio = bio || user.userInfo.bio;
@@ -195,6 +201,11 @@ app.put('/profile/update', async (req, res) => {
               const buffer = Buffer.from(profilePic.split(",")[1], "base64");
               user.userInfo.profilePic = buffer;
           }
+
+          if (coverImage) {
+            const buffer = Buffer.from(coverImage.split(",")[1], "base64");
+            user.userInfo.coverImage = buffer;
+        }
 
           await user.userInfo.save();
           res.json({ message: "Profile updated successfully" });
@@ -206,7 +217,7 @@ app.put('/profile/update', async (req, res) => {
   });
 });
 
-app.get('/search/users', async (req, res) => {
+app.get('/api/search/users', async (req, res) => {
   const { query, currentUser } = req.query;
 
   if (!query) {
@@ -227,7 +238,7 @@ app.get('/search/users', async (req, res) => {
 });
 
 // Friends ------------------------------------------------------
-app.post('/addFriend', async (req, res) => {
+app.post('/api/addFriend', async (req, res) => {
   const { userId, friendId } = req.body;
 
   try {
@@ -246,7 +257,7 @@ app.post('/addFriend', async (req, res) => {
   }
 });
 
-app.get('/friends/:userId', async (req, res) => {
+app.get('/api/friends/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     const userInfo = await UserInfo.findById(userId).populate('friends');
@@ -273,7 +284,7 @@ app.get('/friends/:userId', async (req, res) => {
   }
 });
 
-app.post('/friend-request', async (req, res) => {
+app.post('/api/friend-request', async (req, res) => {
   const { fromId, toId } = req.body;
 
   try {
@@ -294,19 +305,32 @@ app.post('/friend-request', async (req, res) => {
   }
 });
 
-app.get('/friend-requests/:userInfoId', async (req, res) => {
+app.get('/api/friend-requests/:userInfoId', async (req, res) => {
   try {
     const userInfo = await UserInfo.findById(req.params.userInfoId).populate('friendRequests');
     if (!userInfo) return res.status(404).json({ error: 'User not found' });
 
-    res.json(userInfo.friendRequests);
+    const someRequests = await Promise.all(
+      userInfo.friendRequests.map(async (requester) => {
+        const user = await User.findOne({ userInfo: requester._id }).select('username');
+        return {
+          _id: requester._id,
+          fName: requester.fName,
+          lName: requester.lName,
+          profilePic: requester.profilePic,
+          username: user?.username || ''
+        };
+      })
+    );
+
+    res.json(someRequests);
   } catch (err) {
     console.error('Get friend requests error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-app.post('/friend-request/accept', async (req, res) => {
+app.post('/api/friend-request/accept', async (req, res) => {
   const { currentUserId, requesterId } = req.body;
 
   try {
@@ -339,7 +363,7 @@ app.post('/friend-request/accept', async (req, res) => {
   }
 });
 
-app.post('/friend-request/deny', async (req, res) => {
+app.post('/api/friend-request/deny', async (req, res) => {
   const { currentUserId, requesterId } = req.body;
 
   try {
@@ -374,7 +398,7 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-app.post('/cookbook', verifyToken, async (req, res) => {
+app.post('/api/cookbook', verifyToken, async (req, res) => {
     const { title, isPublic, coverImage } = req.body;
   const userId = req.userId;
 
@@ -397,7 +421,7 @@ app.post('/cookbook', verifyToken, async (req, res) => {
   }
 });
 
-app.get('/cookbook', verifyToken, async (req, res) => {
+app.get('/api/cookbook', verifyToken, async (req, res) => {
   const userId = req.userId;
 
   try {
@@ -409,14 +433,21 @@ app.get('/cookbook', verifyToken, async (req, res) => {
   }
 });
 
-app.get('/cookbook/:id', verifyToken, async (req, res) => {
+app.get('/api/cookbook/:id', verifyToken, async (req, res) => {
   const cookbookId = req.params.id;
   const userId = req.userId;
 
   try {
-    const cookbook = await Cookbook.findOne({ _id: cookbookId, owner: userId }).populate('recipes');
+    const cookbook = await Cookbook.findOne({
+      _id: cookbookId,
+      $or: [
+        { owner: userId },
+        { isPublic: true }
+      ]
+    }).populate('recipes');
+
     if (!cookbook) {
-      return res.status(404).json({ message: 'Cookbook not found or not owned by you' });
+      return res.status(404).json({ message: 'Cookbook not found or access denied' });
     }
 
     res.status(200).json(cookbook);
@@ -426,7 +457,7 @@ app.get('/cookbook/:id', verifyToken, async (req, res) => {
   }
 });
 
-app.put('/cookbook/:id', async (req, res) => {
+app.put('/api/cookbook/:id', async (req, res) => {
   try {
       const { id } = req.params;
       const { isPublic } = req.body;
@@ -444,7 +475,7 @@ app.put('/cookbook/:id', async (req, res) => {
   }
 });
 
-app.post('/cookbook/:id/addRecipe', verifyToken, async (req, res) => {
+app.post('/api/cookbook/:id/addRecipe', verifyToken, async (req, res) => {
   const { id } = req.params;
   const { recipeId } = req.body;
 
@@ -466,9 +497,9 @@ app.post('/cookbook/:id/addRecipe', verifyToken, async (req, res) => {
   }
 });
 
-app.get('/cookbooks/user/:username', verifyToken, async (req, res) => {
+app.get('/api/cookbooks/user/:username', verifyToken, async (req, res) => {
   const username = req.params.username;
-  const userId = req.userId;
+  const requesterId = req.userId;
 
   try {
     const user = await User.findOne({ username: username });
@@ -476,7 +507,14 @@ app.get('/cookbooks/user/:username', verifyToken, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const cookbooks = await Cookbook.find({ owner: user._id }).populate('recipes');
+    const isSameUser = user._id.toString() === requesterId;
+
+    const filter = { owner: user._id };
+    if (!isSameUser) {
+      filter.isPublic = true;
+    }
+
+    const cookbooks = await Cookbook.find(filter).populate('recipes');
     res.status(200).json(cookbooks);
   } catch (err) {
     console.error('Error fetching cookbooks:', err);
@@ -484,7 +522,7 @@ app.get('/cookbooks/user/:username', verifyToken, async (req, res) => {
   }
 });
 
-app.delete('/cookbook/:id', verifyToken, async (req, res) => {
+app.delete('/api/cookbook/:id', verifyToken, async (req, res) => {
   const cookbookId = req.params.id;
   const userId = req.userId;
 
@@ -504,31 +542,40 @@ app.delete('/cookbook/:id', verifyToken, async (req, res) => {
 
 // Profile photo addition ----------------------------------------------
 const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
+const upload = multer({ storage: multer.memoryStorage() });
 
-app.post('/upload', upload.single('profilePic'), async (req, res) => {
+app.post('/api/upload', upload.fields([
+  { name: 'profilePic', maxCount: 1 },
+  { name: 'coverImage', maxCount: 1 }
+]), async (req, res) => {
   const { userId } = req.body;
 
   if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ msg: 'Invalid user ID' });
+    return res.status(400).json({ msg: 'Invalid user ID' });
   }
 
   try {
-      const userInfo = await UserInfo.findById(userId);
-      if (!userInfo) {
-          return res.status(404).json({ msg: 'UserInfo not found' });
-      }
+    const userInfo = await UserInfo.findById(userId);
+    if (!userInfo) {
+      return res.status(404).json({ msg: 'UserInfo not found' });
+    }
 
-      userInfo.profilePic = req.file.buffer;
-      await userInfo.save();
-      return res.json({ msg: 'Upload successful', userInfo });
+    if (req.files.profilePic) {
+      userInfo.profilePic = req.files.profilePic[0].buffer;
+    }
+    if (req.files.coverImage) {
+      userInfo.coverImage = req.files.coverImage[0].buffer;
+    }
+
+    await userInfo.save();
+    return res.json({ msg: 'Upload successful', userInfo });
   } catch (err) {
-      console.error('Error uploading image:', err);
-      return res.status(500).json({ msg: 'Error uploading image' });
+    console.error('Error uploading image:', err);
+    return res.status(500).json({ msg: 'Error uploading image' });
   }
 });
 
-app.get('/profilePic/:userId', async (req, res) => {
+app.get('/api/profilePic/:userId', async (req, res) => {
   try {
       const userInfo = await UserInfo.findById(req.params.userId);
       if (!userInfo || !userInfo.profilePic) {
@@ -543,8 +590,23 @@ app.get('/profilePic/:userId', async (req, res) => {
   }
 });
 
+app.get('/api/coverImage/:userId', async (req, res) => {
+  try {
+    const userInfo = await UserInfo.findById(req.params.userId);
+    if (!userInfo || !userInfo.coverImage) {
+      return res.status(404).send('Cover image not found');
+    }
+
+    res.contentType('image/jpeg');
+    res.send(userInfo.coverImage);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error fetching cover image');
+  }
+});
+
 // Attempt at chat part! -----------------------------------------
-app.get('/messages/:id', verifyToken, async (req, res) => {
+app.get('/api/messages/:id', verifyToken, async (req, res) => {
   const userId = req.userId;
   const otherUserInfoId = req.params.id;
 
@@ -570,7 +632,7 @@ app.get('/messages/:id', verifyToken, async (req, res) => {
   }
 });
 
-app.post('/messages', verifyToken, async (req, res) => {
+app.post('/api/messages', verifyToken, async (req, res) => {
   const userId = req.userId;
   const { recipient, text } = req.body;
 
@@ -591,6 +653,114 @@ app.post('/messages', verifyToken, async (req, res) => {
   } catch (err) {
     console.error("Error sending message:", err);
     res.status(500).json({ error: 'Error sending message' });
+  }
+});
+
+// User-submitted recipe time lol---------------------------------------
+app.post('/api/recipes', verifyToken, async (req, res) => {
+  try {
+    const {
+      title,
+      image,
+      instructions,
+      ingredients,
+      prepTime,
+      cookTime,
+      servings,
+      link,
+      tags,
+      isPublic,
+      cookbookId
+    } = req.body;
+
+    const userId = req.userId;
+    const existingCount = await Recipe.countDocuments({ owner: userId });
+
+    const newRecipe = new Recipe({
+      title,
+      image: image ? Buffer.from(image.split(',')[1], 'base64') : undefined,
+      instructions,
+      ingredients,
+      prepTime,
+      cookTime,
+      servings,
+      link,
+      mealType: tags.mealType?.map(t => t.value),
+      cuisine: tags.cuisine?.map(t => t.value),
+      diet: tags.diet?.map(t => t.value),
+      intolerance: tags.intolerance?.map(t => t.value),
+      isPublic,
+      owner: userId,
+      index: existingCount + 1
+    });
+
+    await newRecipe.save();
+
+    if (cookbookId) {
+      const cookbook = await Cookbook.findOne({ _id: cookbookId, owner: userId });
+      if (cookbook && !cookbook.recipes.includes(newRecipe._id)) {
+        cookbook.recipes.push(newRecipe._id);
+        await cookbook.save();
+      }
+    }
+
+    res.status(201).json(newRecipe);
+  } catch (error) {
+    console.error('Error creating recipe:', error);
+    res.status(500).json({ error: 'Failed to create recipe' });
+  }
+});
+
+app.get('/api/my-recipes', verifyToken, async (req, res) => {
+  try {
+    const recipes = await Recipe.find({ owner: req.userId }).sort({ index: 1 });
+
+    const recipesWithImage = recipes.map(recipe => {
+      const imageBase64 = recipe.image
+        ? recipe.image.toString('base64')
+        : null;
+
+      return {
+        ...recipe.toObject(),
+        image: imageBase64
+      };
+    });
+
+    res.status(200).json(recipesWithImage);
+  } catch (error) {
+    console.error('Error fetching user recipes:', error);
+    res.status(500).json({ error: 'Failed to fetch recipes' });
+  }
+});
+
+app.get('/api/recipes/user/:username', async (req, res) => {
+  try {
+    const { username } = req.params;
+    const user = await User.findOne({ username });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const publicRecipes = await Recipe.find({ 
+      owner: user._id, 
+      isPublic: true 
+    }).sort({ index: 1 });
+    const recipesWithImage = publicRecipes.map(recipe => {
+      const imageBase64 = recipe.image
+        ? recipe.image.toString('base64')
+        : null;
+
+      return {
+        ...recipe.toObject(),
+        image: imageBase64
+      };
+    });
+
+    res.status(200).json(recipesWithImage);
+  } catch (error) {
+    console.error('Error fetching public recipes by username:', error);
+    res.status(500).json({ error: 'Failed to fetch public recipes' });
   }
 });
 

@@ -6,16 +6,35 @@ const recipeSchema = new mongoose.Schema({
     required: true 
   },
   image: { 
-    type: Buffer 
+    type: Buffer,
+    required: true
   },
-  instructions: { 
-    type: String, 
-  },
-  ingredients: [{ 
+  instructions: [{ 
     type: String 
   }],
-  apiId: { 
-    type: String, 
+  mealType: [{ 
+    type: String 
+  }],
+  cuisine: [{ 
+    type: String 
+  }],
+  diet: [{ 
+    type: String 
+  }],
+  intolerance: [{ 
+    type: String 
+  }],
+  isPublic: { 
+    type: Boolean, 
+    default: false 
+  },
+  owner: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'User', 
+      required: true 
+  },
+  index: { 
+    type: Number, 
     required: true 
   },
 });

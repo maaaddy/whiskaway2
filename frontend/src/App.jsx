@@ -22,12 +22,25 @@ function App() {
     const [searchQuery, setSearchQuery] = useState('');
     const [recipeFilter, setRecipeFilter] = useState("all");
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [showChat, setShowChat] = useState(false);
+    const [chatOpen, setChatOpen] = useState(false);
+    const [initialChatUserId, setInitialChatUserId] = useState(null);
+
 
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
             setIsLoggedIn(true);
         }
+
+        const handleOpenChat = (e) => {
+            const userId = e.detail?.userId;
+            setInitialChatUserId(userId || null);
+            setChatOpen(true);
+          };
+        
+          window.addEventListener('openChat', handleOpenChat);
+          return () => window.removeEventListener('openChat', handleOpenChat);
     }, []);
 
     const handleLogin = () => {
@@ -55,7 +68,6 @@ function App() {
                             <Route path="/recipe/:id" element={<RecipeDetailPage />} />
                             <Route path="/add-recipe" element={<CreatePage />} />
                             <Route path="/profile/:username?" element={<ProfilePage />} />
-                            <Route path="/messages" element={<ChatPage />} />
                             <Route path="/cookbook" element={<CookbookPage />} />
                             <Route path="/cookbook/:id" element={<CookbookDetailPage />} />
                             <Route path="/about" element={<About />} />
@@ -71,7 +83,20 @@ function App() {
                         </>
                     )}
                 </Routes>
-                {isLoggedIn && <BottomNav />}
+                {isLoggedIn && (
+                <>
+                    <BottomNav toggleChat={() => setShowChat(prev => !prev)} />
+                    {(showChat || chatOpen) && (
+                    <ChatPage
+                        closeChat={() => {
+                        setShowChat(false);
+                        setChatOpen(false);
+                        }}
+                        initialUserId={initialChatUserId}
+                    />
+                    )}
+                </>
+                )}
             </BrowserRouter>
         </UserContextProvider>
     );
