@@ -66,13 +66,13 @@ function CookbookPage() {
             <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">Your Cookbooks</h1>
             <div className="flex justify-center space-x-8 mb-6">
                 <button
-                    className={`text-lg font-medium pb-2 ${view === 'cookbooks' ? 'border-b-2 border-red-500 text-red-500' : 'text-gray-600'} transition`}
+                    className={`text-lg font-medium pb-2 ${view === 'cookbooks' ? 'border-b-2 border-teal-600 text-teal-600' : 'text-gray-600'} transition`}
                     onClick={() => setView('cookbooks')}
                 >
                     Cookbooks
                 </button>
                 <button
-                    className={`text-lg font-medium pb-2 ${view === 'create' ? 'border-b-2 border-red-500 text-red-500' : 'text-gray-600'} transition`}
+                    className={`text-lg font-medium pb-2 ${view === 'create' ? 'border-b-2 border-teal-600 text-teal-600' : 'text-gray-600'} transition`}
                     onClick={() => setView('create')}
                 >
                     Create

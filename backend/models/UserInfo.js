@@ -24,6 +24,9 @@ const UserInfoSchema = new mongoose.Schema({
     profilePic: {
         type: Buffer,
     },
+    coverImage: {
+        type: Buffer,
+    },
 });
 
 module.exports = mongoose.model('UserInfo', UserInfoSchema);

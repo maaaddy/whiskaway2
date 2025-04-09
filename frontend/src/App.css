@@ -56,7 +56,7 @@ h1 {
 
 /* Bottom Navigation Bar Styling -------------------------------------*/
 .bottom-nav {
-  @apply flex justify-around p-4 bg-white border-t border-gray-200 fixed bottom-0 w-full;
+  @apply flex justify-around pb-2 pt-3 bg-white border-t border-gray-200 fixed bottom-0 w-full;
 }
 
 .bottom-nav a {
@@ -85,13 +85,12 @@ h1 {
   @apply text-2xl font-bold;
 }
 
-
 .search-container {
-  @apply relative flex flex-col w-2/5;
+  @apply relative flex flex-col w-2/5 text-gray-500;
 }
 
 .search-input {
-  @apply w-full p-2.5 pl-9 pr-6 border border-gray-200 rounded-3xl text-base bg-gray-100;
+  @apply w-full pl-9 pr-6 border border-gray-200 rounded-3xl text-base bg-gray-100;
 }
 
 .search-icon {

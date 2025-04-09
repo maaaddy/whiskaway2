@@ -89,12 +89,18 @@ const intoleranceOptions = [
     { value: "wheat", label: "Wheat-Free" }
 ];
 
+function filterOptions(options, selected) {
+    return selected.some(opt => opt.value === "") ? [options[0]] : options.slice(1);
+}
+
 function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
     const location = useLocation();
     const showSearchBar = location.pathname === "/";
     const showUserSearchBar = location.pathname.startsWith("/profile");
+    const showRecipeSearchBar = location.pathname.startsWith("/add-recipe");
 
     const [userSearchQuery, setUserSearchQuery] = useState("");
+    const [recipeSearchQuery, setRecipeSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState([]);
 
     const [filtersVisible, setFiltersVisible] = useState(false);
@@ -171,7 +177,7 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
     }, []);
 
     return (
-        <div className="fixed w-full bg-white backdrop-blur-md shadow-sm py-3 px-6 flex items-center justify-between z-50">
+        <div className="fixed w-full bg-white backdrop-blur-md shadow-sm py-1 px-6 flex items-center justify-between z-50">
             <div className="flex items-center space-x-3">
                 <img src="/logo.png" alt="Logo" className="w-12 h-auto" />
                 <span className="text-xl text-teal-700 font-bold">WhiskAway</span>
@@ -181,20 +187,44 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
                 <div className="search-container" ref={filterRef}>
                     <input
                         type="text"
-                        placeholder="Search recipes..."
+                        placeholder="Search Recipes..."
                         value={searchQuery}
                         onFocus={() => setFiltersVisible(true)}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="px-5 py-3 pl-12 rounded-full bg-white/70 backdrop-blur-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 shadow-sm"
+                        className="px-5 py-2 pl-12 rounded-full bg-gray-100 backdrop-blur-md border border-gray-100 focus:outline-none"
                     />
                     <FontAwesomeIcon icon={faSearch} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500" />
                     
                     {filtersVisible && (
-                        <div className="absolute top-full left-0 w-full bg-white border border-gray-300 rounded-md shadow-md p-4 mt-2 z-50">
-                            <Select options={mealTypeOptions} isMulti onChange={setSelectedMealType} placeholder="Select Meal Type..." />
-                            <Select options={cuisineOptions} isMulti onChange={setSelectedCuisine} placeholder="Select Cuisine..." />
-                            <Select options={dietOptions} isMulti onChange={setSelectedDiet} placeholder="Select Diet..." />
-                            <Select options={intoleranceOptions} isMulti onChange={setSelectedIntolerance} placeholder="Select Intolerances..." />
+                        <div className="absolute top-full left-0 w-full bg-white border border-gray-200 rounded-md shadow-md p-4 mt-2 z-50">
+                            <Select
+                                options={filterOptions(mealTypeOptions, selectedMealType)}
+                                isMulti
+                                value={selectedMealType}
+                                onChange={setSelectedMealType}
+                                placeholder="Select Meal Type..."
+                            />
+                            <Select
+                                options={filterOptions(cuisineOptions, selectedCuisine)}
+                                isMulti
+                                value={selectedCuisine}
+                                onChange={setSelectedCuisine}
+                                placeholder="Select Cuisine..."
+                            />
+                            <Select
+                                options={filterOptions(dietOptions, selectedDiet)}
+                                isMulti
+                                value={selectedDiet}
+                                onChange={setSelectedDiet}
+                                placeholder="Select Diet..."
+                            />
+                            <Select
+                                options={filterOptions(intoleranceOptions, selectedIntolerance)}
+                                isMulti
+                                value={selectedIntolerance}
+                                onChange={setSelectedIntolerance}
+                                placeholder="Select Intolerances..."
+                            />
                             <button onClick={applyFilters} className="mt-2 px-4 py-2 bg-teal-500 text-white rounded-md shadow-md hover:bg-teal-600 transition">
                                 Apply Filters
                             </button>
@@ -210,7 +240,7 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
                         placeholder="Find friends..."
                         value={userSearchQuery}
                         onChange={(e) => setUserSearchQuery(e.target.value)}
-                        className="px-5 py-3 pl-12 rounded-full bg-white/70 backdrop-blur-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 shadow-sm"
+                        className="px-5 py-2 pl-12 rounded-full bg-gray-100 backdrop-blur-md border border-gray-100 focus:outline-none"
                     />
                     <FontAwesomeIcon icon={faSearch} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500" />
                     
@@ -234,12 +264,25 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
                 </div>
             )}
 
+            {showRecipeSearchBar && (
+                <div className="search-container">
+                    <input
+                        type="text"
+                        placeholder="Search Your Recipes..."
+                        value={recipeSearchQuery}
+                        onChange={(e) => setRecipeSearchQuery(e.target.value)}
+                        className="px-5 py-2 pl-12 rounded-full bg-gray-100 backdrop-blur-md border border-gray-100 focus:outline-none"
+                    />
+                    <FontAwesomeIcon icon={faSearch} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500" />
+                </div>
+            )}
+
             <div className="flex items-center space-x-5 text-teal-700">
                 <Link to="/notifications" className="relative hover:text-yellow-600 transition">
                 <FontAwesomeIcon icon={faBell} size="lg" />
                     {requestCount > 0 && (
                         <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center z-50">
-                        {requestCount}
+                            {requestCount}
                         </span>
                     )}
                 </Link>
