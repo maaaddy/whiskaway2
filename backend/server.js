@@ -43,7 +43,7 @@ app.get('/api/test', (_req, res) => {
 // Login/User Stuff ---------------------------------------------------------
 app.post('/api/register', async (req, res) => {
   try {
-    const { username, password, fName, lName, bio } = req.body;
+    const { username, password, fName, lName, bio, intolerances } = req.body;
     if (!username) {
       return res.status(400).json({ error: 'Username required' });
     }
@@ -57,6 +57,7 @@ app.post('/api/register', async (req, res) => {
       lName,
       bio,
       friends: [],
+      intolerances: Array.isArray(intolerances) ? intolerances : [],
     });
 
     const user = await User.create({
@@ -265,17 +266,31 @@ app.get('/api/friends/:userId', async (req, res) => {
 
     const userDocs = await User.find({ userInfo: { $in: userInfo.friends.map(f => f._id) } });
 
-    const mergedFriends = userDocs.map(user => {
+    const mergedFriends = await Promise.all(userDocs.map(async user => {
       const info = userInfo.friends.find(f => f._id.toString() === user.userInfo.toString());
+    
+      const latestMessage = await Message.findOne({
+        $or: [
+          { sender: userInfo._id, recipient: info._id },
+          { sender: info._id, recipient: userInfo._id },
+        ]
+      }).sort({ createdAt: -1 });
+    
       return {
         _id: user._id,
         username: user.username,
         userInfo: user.userInfo,
         fName: info?.fName || '',
         lName: info?.lName || '',
-        bio: info?.bio || ''
+        bio: info?.bio || '',
+        profilePic: info?.profilePic
+          ? `data:image/jpeg;base64,${info.profilePic.toString('base64')}`
+          : '',
+        latestMessage: latestMessage
+          ? { text: latestMessage.text, createdAt: latestMessage.createdAt }
+          : null
       };
-    });
+    }));
 
     res.json(mergedFriends);
   } catch (error) {

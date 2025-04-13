@@ -116,7 +116,7 @@ function RecipeDetailPage() {
     if (!recipe) return <p>Loading recipe...</p>;
 
     return (
-        <div className="pt-16 max-w-4xl mx-auto px-4 py-8">
+        <div className="pt-16 max-w-4xl mx-auto px-4 pb-20">
             <div className="w-full mb-6">
                 <img
                     src={recipe.image}
