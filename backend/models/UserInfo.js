@@ -27,6 +27,10 @@ const UserInfoSchema = new mongoose.Schema({
     coverImage: {
         type: Buffer,
     },
+    intolerances: {
+        type: [String],
+        default: [],
+    }
 });
 
 module.exports = mongoose.model('UserInfo', UserInfoSchema);

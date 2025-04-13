@@ -140,16 +140,11 @@ function ProfilePage() {
     return (
         <div className="pt-12 profile-page">
           <div className="relative w-10/12 h-80 mb-52 rounded-lg">
-            {updatedProfile.coverImage || userData.coverImage ? (
-                <img
-                src={updatedProfile.coverImage || userData.coverImage}
-                alt="Cover"
-                className="absolute inset-0 w-full h-full object-cover rounded-lg z-0"
-                />
-            ) : (
-                <div className="absolute inset-0 w-full h-full bg-gray-200 rounded-lg z-0" />
-            )}
-
+          <img
+            src={updatedProfile.coverImage || userData.coverImage || '/cover_image.jpg'}
+            alt="Cover"
+            className="absolute inset-0 w-full h-full object-cover object-[center_18%] rounded-lg z-0"
+          />
             {editMode && (
                 <>
                 <input
@@ -289,101 +284,69 @@ function ProfilePage() {
               </div>
             </div>
           </div>
-      
-          <hr className="border-t border-gray-300 mt-32 mb-16 w-11/12 mx-auto translate-y-4 sm:translate-y-0" />
-          <div className="cookbook-profile max-w-6xl mx-auto px-6 pb-12 translate-y-4 sm:translate-y-0">
-            <div className="mb-6">
-                <div className="flex justify-start sm:justify-start items-center">
-                <div className="flex space-x-4 mx-auto sm:mx-0">
-                    <button
-                    onClick={() => setViewTab('cookbooks')}
-                    className={`px-4 py-1 font-medium border-b-2 ${
+          <hr className="border-t border-gray-300 mt-32 mb-16 w-10/12 mx-auto translate-y-4 sm:translate-y-0" />
+        <div className="w-full px-6 sm:px-32 pb-12 translate-y-4 sm:translate-y-0 overflow-x-hidden">
+          <div className="mb-6">
+            <div className="flex space-x-4">
+              <button
+                onClick={() => setViewTab('cookbooks')}
+                className={`px-4 py-1 font-medium border-b-2 ${
+                  viewTab === 'cookbooks'
+                    ? 'border-teal-600 text-teal-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Cookbooks
+              </button>
+              <button
+                onClick={() => setViewTab('recipes')}
+                className={`px-4 py-1 font-medium border-b-2 ${
+                  viewTab === 'recipes'
+                    ? 'border-teal-600 text-teal-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Recipes
+              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap px-10 gap-4">
+            {(viewTab === 'cookbooks' ? cookbooks : recipes).length > 0 ? (
+              (viewTab === 'cookbooks' ? cookbooks : recipes).map((item) => (
+                <div
+                  key={item._id}
+                  className="relative w-[260px] h-[300px] mb-2 mr-2 last:mr-0 rounded-xl overflow-hidden shadow hover:shadow-xl transition group bg-white"
+                >
+                  <Link to={`/${viewTab === 'cookbooks' ? 'cookbook' : 'recipe'}/${item._id}`} className="block w-full h-full bg-gray-100">
+                    <img
+                      src={
                         viewTab === 'cookbooks'
-                        ? 'border-teal-600 text-teal-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
-                    }`}
-                    >
-                    Cookbooks
-                    </button>
-                    <button
-                    onClick={() => setViewTab('recipes')}
-                    className={`px-4 py-1 font-medium border-b-2 ${
-                        viewTab === 'recipes'
-                        ? 'border-teal-600 text-teal-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
-                    }`}
-                    >
-                    Recipes
-                    </button>
-                </div>
-                </div>
-            </div>
-
-            {viewTab === 'cookbooks' ? (
-                <div className="w-full flex justify-start">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-18 translate-y-2 sm:translate-y-0 justify-start">
-                {cookbooks.length > 0 ? (
-                    cookbooks.map((cookbook) => (
-                    <div
-                        key={cookbook._id}
-                        className="relative rounded-lg overflow-hidden shadow hover:shadow-lg transition group"
-                    >
-                        <Link to={`/cookbook/${cookbook._id}`} className="block w-full h-64">
-                        <img
-                            src={`/${cookbook.coverImage || 'cover1.JPG'}`}
-                            alt={`${cookbook.title} Cover`}
-                            className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="text-white text-lg font-semibold bg-black/50 px-3 py-1 rounded-md translate-y-[-20%] text-center">
-                            {cookbook.title}
-                            </div>
-                        </div>
-                        </Link>
+                          ? `/${item.coverImage || 'cover1.JPG'}`
+                          : item.image
+                          ? `data:image/jpeg;base64,${item.image}`
+                          : '/placeholder.jpg'
+                      }
+                      alt={item.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-white text-lg font-semibold bg-black/60 px-4 py-2 rounded-lg text-center">
+                        {item.title}
+                      </div>
                     </div>
-                    ))
-                ) : (
-                    <p className="text-center col-span-full text-gray-600">No public cookbooks yet.</p>
-                )}
+                  </Link>
                 </div>
-                </div>
-                </div>
+              ))
             ) : (
-                <div className="w-full flex justify-start">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">    
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-18">
-                {recipes.length > 0 ? (
-                    recipes.map((recipe) => (
-                    <div
-                        key={recipe._id}
-                        className="relative rounded-lg overflow-hidden shadow hover:shadow-lg transition group"
-                    >
-                        <Link to={`/recipe/${recipe._id}`} className="block w-full h-64 bg-gray-100">
-                        <img
-                            src={recipe.image ? `data:image/jpeg;base64,${recipe.image}` : '/placeholder.jpg'}
-                            alt={recipe.title}
-                            className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="text-white text-lg font-semibold bg-black/50 px-3 py-1 rounded-md translate-y-[-20%] text-center">
-                            {recipe.title}
-                            </div>
-                        </div>
-                        </Link>
-                    </div>
-                    ))
-                ) : (
-                    <p className="text-center col-span-full text-gray-600">No public recipes yet.</p>
-                )}
-                </div>
-                </div>
-                </div>
+              <p className="text-center col-span-full text-gray-600">
+                {viewTab === 'cookbooks' ? 'No public cookbooks yet.' : 'No public recipes yet.'}
+              </p>
             )}
-            </div>
-
+          </div>
         </div>
-      );
-      
+      </div>
+    );
 }
+
 export default ProfilePage;

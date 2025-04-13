@@ -11,24 +11,20 @@ function About() {
             <div className='bg-red-300'>
                 <span className='text-xl font-bold text-red-600'>High Importance:</span>
             </div>
-            <p>registration form</p>
+            <p>registration form bugs</p>
             <br></br>
             <div className='bg-gray-200'>
                 <span className='text-xl'>Profile Section:</span>
             </div>
-            <p>bio character limit</p>
-            <p>friends</p>
+            <p>Horizontal Scroll Bar for recipes & cookbooks.</p>
             <br></br>
             <div className='bg-gray-200'>
                 <span className='text-xl'>HomePage Section:</span>
             </div>
-            <p>design UI better</p>
             <br></br>
             <div className='bg-gray-200'>
                 <span className='text-xl'>Database</span>
             </div>
-            <p>allergens</p>
-            <p>dietary restrictions</p>
             <br></br>
             <div className='bg-gray-200'>
                 <span className='text-xl'>Cookbooks</span>
@@ -39,11 +35,7 @@ function About() {
             <div className='bg-gray-200'>
                 <span className='text-xl'>Other/Random</span>
             </div>
-            <p>search for friends only from profile page.</p>
-            <p>click to flip recipe card in cookbook. One side is ingredients, one side is recipe instructions.</p>
             <p>pencil icon small for under profile photo to make obvious when editing.</p>
-            <p>draw out what the recipe detail page should look like. fr.</p>
-            <p>notifications (bell icon?)</p>
             <p>Are you sure? Notification for cookbook deletion</p>
             <p>Are you sure? Notification for recipe removing from cookbook</p>
             <p>Check if public cookbooks are empty, if so, do not display on the person's profile.</p>
