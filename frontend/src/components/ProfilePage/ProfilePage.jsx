@@ -2,11 +2,40 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import { ScrollMenu, VisibilityContext } from 'react-horizontal-scrolling-menu';
+import 'react-horizontal-scrolling-menu/dist/styles.css';
 
 function ProfilePage() {
     const { username } = useParams();
     const [userData, setUserData] = useState(null);
     const [cookbooks, setCookbooks] = useState([]);
+
+    const loadCookbooks = async (username) => {
+      try {
+        setLoadingCookbooks(true);
+        const res = await axios.get(`/api/cookbooks/user/${username}`);
+        setCookbooks(res.data.filter(cb => cb.isPublic));
+        setCookbooksLoaded(true);
+        } catch (err) {
+          console.warn('Failed to load cookbooks');
+        } finally {
+          setLoadingCookbooks(false);
+        }
+    };
+
+    const loadRecipes = async (username) => {
+      try {
+        setLoadingRecipes(true);
+        const res = await axios.get(`/api/recipes/user/${username}`);
+        setRecipes(res.data.filter(r => r.isPublic));
+        setRecipesLoaded(true);
+      } catch (err) {
+        console.warn('Failed to load recipes');
+      } finally {
+        setLoadingRecipes(false);
+      }
+    };
+
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
@@ -24,73 +53,100 @@ function ProfilePage() {
     const [friendCount, setFriendCount] = useState(0);
     const [viewTab, setViewTab] = useState('cookbooks');
     const [recipes, setRecipes] = useState([]);
-
+    const [loadingRecipes, setLoadingRecipes] = useState(true);
+    const [loadingCookbooks, setLoadingCookbooks] = useState(true);
+    const [loadingFriends, setLoadingFriends] = useState(true);
+    const [recipesLoaded, setRecipesLoaded] = useState(false);
+    const [cookbooksLoaded, setCookbooksLoaded] = useState(false);
 
     useEffect(() => {
-        const fetchData = async () => {
-          try {
-            setLoading(true);
+      const loadProfile = async () => {
+        try {
+          setLoading(true);
+          const [profileRes, currentUserRes] = await Promise.all([
+            axios.get(username ? `/api/profile/${username}` : `/api/profile`),
+            axios.get(`/api/profile`)
+          ]);
     
-            const [profileRes, currentUserRes] = await Promise.all([
-              axios.get(username ? `/api/profile/${username}` : `/api/profile`),
-              axios.get(`/api/profile`)
-            ]);
-      
-            const profileData = profileRes.data;
-            const currentUserData = currentUserRes.data;
-      
-            setUserData(profileData);
-            setCurrentUser(currentUserData.username);
-            setUserInfoId(currentUserData.userInfo);
-      
-            const [friendsRes, cookbooksRes] = await Promise.all([
-              axios.get(`/api/friends/${profileData.userInfo}`),
-              axios.get(`/api/cookbooks/user/${profileData.username}`)
-            ]);
-      
-            setFriendCount(friendsRes.data.length || 0);
-            setCookbooks(cookbooksRes.data.filter(cb => cb.isPublic));
-
-            const recipesRes = await axios.get(`/api/recipes/user/${profileData.username}`);
-            const publicRecipes = recipesRes.data.filter(r => r.isPublic);
-            setRecipes(publicRecipes);
-
-      
-            if (profileData.userInfo !== currentUserData.userInfo) {
-              const [recipientInfo, friendsList] = await Promise.all([
-                axios.get(`/api/friend-requests/${profileData.userInfo}`),
-                axios.get(`/api/friends/${currentUserData.userInfo}`)
-              ]);
-      
-              const alreadySent = recipientInfo.data.some(req => req._id === currentUserData.userInfo);
-              const alreadyFriend = friendsList.data.some(
-                friend => friend.userInfo?.toString() === profileData.userInfo?.toString()
-              );
-      
-              setRequestSent(alreadySent);
-              setIsFriend(alreadyFriend);
-            }
-      
-            setUpdatedProfile({
-              fName: profileData.fName,
-              lName: profileData.lName,
-              bio: profileData.bio,
-              profilePic: profileData.profilePic,
-              coverImage: profileData.coverImage,
-            });
-      
-          } catch (err) {
-            console.error(err);
-            setError('Failed to load profile or cookbooks');
-          } finally {
-            setLoading(false);
+          const profileData = profileRes.data;
+          const currentUserData = currentUserRes.data;
+    
+          setUserData(profileData);
+          setCurrentUser(currentUserData.username);
+          setUserInfoId(currentUserData.userInfo);
+    
+          setUpdatedProfile({
+            fName: profileData.fName,
+            lName: profileData.lName,
+            bio: profileData.bio,
+            profilePic: profileData.profilePic,
+            coverImage: profileData.coverImage,
+          });
+    
+          if (!cookbooksLoaded && viewTab === 'cookbooks') {
+            loadCookbooks(profileData.username);
           }
-        };
-      
-        fetchData();
-      }, [username]);
-      
+          
+          if (!recipesLoaded && viewTab === 'recipes') {
+            loadRecipes(profileData.username);
+          }
+                    
+          loadFriends(profileData.userInfo);
+          checkFriendStatus(profileData.userInfo, currentUserData.userInfo);
+    
+        } catch (err) {
+          console.error(err);
+          setError('Failed to load profile');
+        } finally {
+          setLoading(false);
+        }
+      };
+    
+      const loadFriends = async (userInfoId) => {
+        try {
+          setLoadingFriends(true);
+          const res = await axios.get(`/api/friends/${userInfoId}`);
+          setFriendCount(res.data.length || 0);
+        } catch (err) {
+          console.warn('Failed to load friends');
+        } finally {
+          setLoadingFriends(false);
+        }
+      };      
+    
+      const checkFriendStatus = async (profileUserInfoId, currentUserInfoId) => {
+        if (profileUserInfoId === currentUserInfoId) return;
+    
+        try {
+          const [requestsRes, friendsRes] = await Promise.all([
+            axios.get(`/api/friend-requests/${profileUserInfoId}`),
+            axios.get(`/api/friends/${currentUserInfoId}`)
+          ]);
+    
+          setRequestSent(requestsRes.data.some(req => req._id === currentUserInfoId));
+          setIsFriend(friendsRes.data.some(
+            friend => friend.userInfo?.toString() === profileUserInfoId?.toString()
+          ));
+        } catch (err) {
+          console.warn('Failed to check friend status');
+        }
+      };
+    
+      loadProfile();
+    }, [username]);
 
+    useEffect(() => {
+      if (viewTab === 'recipes' && !recipesLoaded && userData?.username) {
+        loadRecipes(userData.username);
+      }
+    }, [viewTab, recipesLoaded, userData]);
+
+    useEffect(() => {
+      if (viewTab === 'cookbooks' && !cookbooksLoaded && userData?.username) {
+        loadCookbooks(userData.username);
+      }
+    }, [viewTab, cookbooksLoaded, userData]);
+    
     const handleEditToggle = () => {
         if (currentUser === userData.username) {
             setEditMode(!editMode);
@@ -118,7 +174,7 @@ function ProfilePage() {
         }
     };
     
-    const copyProfileLink = () => navigator.clipboard.writeText(`https://whiskaway.food/profile/${username || userData.username}`).then(() => alert('Profile link copied!'));
+    const copyProfileLink = () => navigator.clipboard.writeText(`https://whiskaway.food/profile/${username || userData?.username}`).then(() => alert('Profile link copied!'));
 
     const sendFriendRequest = async () => {
         try {
@@ -132,19 +188,106 @@ function ProfilePage() {
           alert('Failed to send friend request.');
         }
     };
-      
-    if (loading) return <p>Loading...</p>;
-    if (error) return <p>{error}</p>;
-    if (!userData) return <p>No user data found.</p>;
 
+    const renderScrollItem = (item, isCookbook) => (
+      <div
+        key={item._id}
+        className="mx-2 w-[260px] h-[300px] rounded-xl overflow-hidden shadow hover:shadow-xl transition group bg-white"
+      >
+        <Link
+          to={`/${isCookbook ? 'cookbook' : 'recipe'}/${item._id}`}
+          className="block w-full h-full bg-gray-100"
+        >
+          <img
+            src={
+              isCookbook
+                ? `/${item.coverImage || 'cover1.JPG'}`
+                : item.image
+                ? `data:image/jpeg;base64,${item.image}`
+                : '/placeholder.jpg'
+            }
+            alt={item.title}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-white text-lg font-semibold bg-black/60 px-4 py-2 rounded-lg text-center">
+              {item.title}
+            </div>
+          </div>
+        </Link>
+      </div>
+    );
+
+    const items = viewTab === 'cookbooks' ? cookbooks : recipes;
+    const isLoadingItems = viewTab === 'cookbooks' ? !cookbooksLoaded || loadingCookbooks : !recipesLoaded || loadingRecipes;
+    const showArrows = items.length >= 3;
+
+    const LeftArrow = ({ show }) => {
+      const { scrollPrev } = React.useContext(VisibilityContext);
+    
+      const handleClick = (e) => {
+        if (!show) {
+          e.preventDefault();
+          return;
+        }
+        scrollPrev();
+      };
+    
+      return (
+        <button
+          onClick={handleClick}
+          className={`text-2xl px-2 py-1 mr-2 rounded-full transition ${
+            show
+              ? 'bg-white shadow hover:bg-gray-100'
+              : 'opacity-0 pointer-events-none'
+          }`}
+        >
+          ◀
+        </button>
+      );
+    };
+    
+    const RightArrow = ({ show }) => {
+      const { scrollNext } = React.useContext(VisibilityContext);
+    
+      const handleClick = (e) => {
+        if (!show) {
+          e.preventDefault();
+          return;
+        }
+        scrollNext();
+      };
+    
+      return (
+        <button
+          onClick={handleClick}
+          className={`text-2xl px-2 py-1 ml-2 rounded-full transition ${
+            show
+              ? 'bg-white shadow hover:bg-gray-100'
+              : 'opacity-0 pointer-events-none'
+          }`}
+        >
+          ▶
+        </button>
+      );
+    };    
+
+    if (error) {
+      return <p>{error}</p>;
+    }
+    
     return (
         <div className="pt-12 profile-page">
           <div className="relative w-10/12 h-80 mb-52 rounded-lg">
-          <img
-            src={updatedProfile.coverImage || userData.coverImage || '/cover_image.jpg'}
-            alt="Cover"
-            className="absolute inset-0 w-full h-full object-cover object-[center_18%] rounded-lg z-0"
-          />
+          {(loading || !userData?.coverImage) ? (
+            <div className="absolute inset-0 w-full h-full bg-gray-200 animate-pulse rounded-lg z-0" />
+          ) : (
+            <img
+              src={updatedProfile.coverImage || userData?.coverImage || '/cover_image.jpg'}
+              alt="Cover"
+              className="absolute inset-0 w-full h-full object-cover object-[center_18%] rounded-lg z-0"
+            />
+          )}
             {editMode && (
                 <>
                 <input
@@ -177,16 +320,20 @@ function ProfilePage() {
                   <>
                     <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" id="profile-pic-upload" />
                     <label htmlFor="profile-pic-upload">
-                      <img
-                        src={updatedProfile.profilePic || userData.profilePic || '/profilepic.jpg'}
-                        alt="Profile"
-                        className="w-full h-full object-cover aspect-square cursor-pointer"
-                      />
+                      {(loading || !userData?.profilePic) ? (
+                        <div className="w-full h-full bg-gray-200 animate-pulse rounded-full" />
+                      ) : (
+                        <img
+                          src={updatedProfile.profilePic || userData?.profilePic || '/profilepic.jpg'}
+                          alt="Profile"
+                          className="w-full h-full object-cover aspect-square cursor-pointer"
+                        />
+                      )}
                     </label>
                   </>
                 ) : (
                   <img
-                    src={userData.profilePic || '/profilepic.jpg'}
+                    src={userData?.profilePic || '/profilepic.jpg'}
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />
@@ -197,7 +344,7 @@ function ProfilePage() {
                   <>
                   <div className="flex items-center gap-2 mb-1">
                     <img src="/logo.png" alt="Logo" className="w-5 h-5" />
-                    <span className="text-gray-600 text-sm">{userData.username}</span>
+                    <span className="text-gray-600 text-sm">{userData?.username}</span>
                   </div>
                   <div className="flex gap-2 mb-1 pt-2">
                     <input
@@ -244,32 +391,54 @@ function ProfilePage() {
                     </button>
                   </div>
                 </>
-                
                 ) : (
                   <>
-                    <h2 className="text-2xl font-semibold text-gray-900">{userData.fName} {userData.lName}</h2>
+                    {!userData ? (
+                      <div className="h-6 w-40 bg-gray-200 rounded-lg animate-pulse z-50" />
+                    ) : (
+                      <h2 className="text-2xl font-semibold text-gray-900">
+                        {!userData ? (
+                          <div className="h-6 w-40 bg-gray-200 rounded-lg animate-pulse" />
+                        ) : (
+                          <h2 className="text-2xl font-semibold text-gray-900">
+                            {userData.fName} {userData.lName}
+                          </h2>
+                        )}
+                      </h2>
+                    )}
                     <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
                       <img src="/logo.png" alt="Logo" className="w-5 h-5 object-contain" />
-                      {userData.username}
+                      {userData?.username}
                     </div>
-                    <p
-                    className="text-gray-600 mt-1 overflow-hidden text-ellipsis whitespace-normal min-h-[2.8rem]"
-                    style={{
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
-                        lineHeight: "1.4rem",
-                        maxHeight: "2.8rem",
-                        width: "100%",
-                        maxWidth: "300px",
-                    }}
-                    >
-                    {userData.bio}
+                    {!userData ? (
+                      <div className="w-[300px] h-10 bg-gray-200 rounded-lg animate-pulse" />
+                    ) : (
+                      <p
+                        className="text-gray-600 mt-1 overflow-hidden text-ellipsis whitespace-normal min-h-[2.8rem]"
+                        style={{
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          lineHeight: "1.4rem",
+                          maxHeight: "2.8rem",
+                          width: "100%",
+                          maxWidth: "300px",
+                        }}
+                      >
+                        {userData.bio}
+                      </p>
+                    )}
+                    <p className="text-gray-700 pt-1">{loading ? (
+                      <div className="h-4 w-24 bg-gray-200 rounded-lg animate-pulse" />
+                    ) : (
+                      <p className="text-gray-700 pt-1">
+                        {loadingFriends ? '---' : `${friendCount} friend${friendCount === 1 ? '' : 's'}`}
+                      </p>
+                    )}
                     </p>
-                    <p className="text-gray-700 pt-1">{friendCount} friend{friendCount === 1 ? '' : 's'}</p>
                     <div className="flex gap-3 mt-3">
                       <button onClick={copyProfileLink} className="bg-blue-200 hover:bg-blue-300 rounded-full px-4 py-2 font-semibold">Share</button>
-                      {currentUser === userData.username ? (
+                      {currentUser === userData?.username ? (
                         <button onClick={handleEditToggle} className="bg-gray-200 hover:bg-gray-300 rounded-full px-4 py-2 font-semibold">Edit Profile</button>
                       ) : isFriend ? (
                         <button disabled className="bg-gray-300 rounded-full px-4 py-2 font-semibold cursor-default">Friends ✓</button>
@@ -311,14 +480,25 @@ function ProfilePage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap px-10 gap-4">
-            {(viewTab === 'cookbooks' ? cookbooks : recipes).length > 0 ? (
-              (viewTab === 'cookbooks' ? cookbooks : recipes).map((item) => (
+          <div className="w-full px-4">
+          {isLoadingItems ? (
+            <div className="flex gap-4">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="translate-x-10 w-[260px] h-[300px] bg-gray-200 rounded-xl animate-pulse" />
+              ))}
+            </div>
+          ) : items.length > 0 ? (
+            <ScrollMenu LeftArrow={<LeftArrow show={showArrows} />} RightArrow={<RightArrow show={showArrows} />}>
+              {items.map((item) => (
                 <div
                   key={item._id}
-                  className="relative w-[260px] h-[300px] mb-2 mr-2 last:mr-0 rounded-xl overflow-hidden shadow hover:shadow-xl transition group bg-white"
+                  itemID={item._id}
+                  className="relative mx-2 w-[260px] h-[300px] rounded-xl overflow-hidden shadow hover:shadow-xl transition group bg-white"
                 >
-                  <Link to={`/${viewTab === 'cookbooks' ? 'cookbook' : 'recipe'}/${item._id}`} className="block w-full h-full bg-gray-100">
+                  <Link
+                    to={`/${viewTab === 'cookbooks' ? 'cookbook' : 'recipe'}/${item._id}`}
+                    className="block w-full h-full bg-gray-100"
+                  >
                     <img
                       src={
                         viewTab === 'cookbooks'
@@ -330,19 +510,18 @@ function ProfilePage() {
                       alt={item.title}
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-white text-lg font-semibold bg-black/60 px-4 py-2 rounded-lg text-center">
-                        {item.title}
-                      </div>
+                    <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-black/70 text-white text-sm font-semibold px-3 py-1 rounded-full">
+                      {item.title}
                     </div>
                   </Link>
                 </div>
-              ))
-            ) : (
-              <p className="text-center col-span-full text-gray-600">
-                {viewTab === 'cookbooks' ? 'No public cookbooks yet.' : 'No public recipes yet.'}
-              </p>
-            )}
+              ))}
+            </ScrollMenu>
+          ) : (
+            <p className="text-center text-gray-600">
+              {viewTab === 'cookbooks' ? 'No public cookbooks yet.' : 'No public recipes yet.'}
+            </p>
+          )}
           </div>
         </div>
       </div>
