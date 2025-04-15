@@ -60,9 +60,15 @@ function ProfilePage() {
     const [cookbooksLoaded, setCookbooksLoaded] = useState(false);
 
     useEffect(() => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.warn('No token found. Skipping profile fetch');
+        return;
+      }
       const loadProfile = async () => {
         try {
           setLoading(true);
+    
           const [profileRes, currentUserRes] = await Promise.all([
             axios.get(username ? `/api/profile/${username}` : `/api/profile`),
             axios.get(`/api/profile`)
@@ -86,15 +92,18 @@ function ProfilePage() {
           if (!cookbooksLoaded && viewTab === 'cookbooks') {
             loadCookbooks(profileData.username);
           }
-          
+    
           if (!recipesLoaded && viewTab === 'recipes') {
             loadRecipes(profileData.username);
           }
-                    
+    
           loadFriends(profileData.userInfo);
           checkFriendStatus(profileData.userInfo, currentUserData.userInfo);
-    
         } catch (err) {
+          if (err.response?.status === 401) {
+            console.warn('User logged out, skipping profile load');
+            return;
+          }
           console.error(err);
           setError('Failed to load profile');
         } finally {
@@ -112,7 +121,7 @@ function ProfilePage() {
         } finally {
           setLoadingFriends(false);
         }
-      };      
+      };
     
       const checkFriendStatus = async (profileUserInfoId, currentUserInfoId) => {
         if (profileUserInfoId === currentUserInfoId) return;
@@ -134,7 +143,7 @@ function ProfilePage() {
     
       loadProfile();
     }, [username]);
-
+    
     useEffect(() => {
       if (viewTab === 'recipes' && !recipesLoaded && userData?.username) {
         loadRecipes(userData.username);
@@ -279,12 +288,18 @@ function ProfilePage() {
     return (
         <div className="pt-12 profile-page">
           <div className="relative w-10/12 h-80 mb-52 rounded-lg">
-          {(loading || !userData?.coverImage) ? (
+          {loading ? (
             <div className="absolute inset-0 w-full h-full bg-gray-200 animate-pulse rounded-lg z-0" />
+          ) : userData?.coverImage ? (
+            <img
+              src={`${userData.coverImage}`}
+              alt="Cover"
+              className="absolute inset-0 w-full h-full object-cover object-[center_18%] rounded-lg z-0"
+            />
           ) : (
             <img
-              src={updatedProfile.coverImage || userData?.coverImage || '/cover_image.jpg'}
-              alt="Cover"
+              src="/cover_image.jpg"
+              alt="Default Cover"
               className="absolute inset-0 w-full h-full object-cover object-[center_18%] rounded-lg z-0"
             />
           )}
@@ -318,22 +333,31 @@ function ProfilePage() {
             <div className="w-44 h-44 min-h-44 min-w-44 rounded-full overflow-hidden border-4 border-white bg-white relative translate-y-36 sm:translate-y-0 z-30">
                 {editMode ? (
                   <>
-                    <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" id="profile-pic-upload" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      id="profile-pic-upload"
+                    />
+
                     <label htmlFor="profile-pic-upload">
-                      {(loading || !userData?.profilePic) ? (
-                        <div className="w-full h-full bg-gray-200 animate-pulse rounded-full" />
-                      ) : (
-                        <img
-                          src={updatedProfile.profilePic || userData?.profilePic || '/profilepic.jpg'}
-                          alt="Profile"
-                          className="w-full h-full object-cover aspect-square cursor-pointer"
-                        />
-                      )}
+                      <img
+                        src={
+                          updatedProfile.profilePic
+                            ? `data:image/jpeg;base64,${updatedProfile.profilePic}`
+                            : userData?.profilePic
+                            ? `data:image/jpeg;base64,${userData.profilePic}`
+                            : '/user.png'
+                        }
+                        alt="Profile"
+                        className="w-full h-full object-cover aspect-square cursor-pointer rounded-full"
+                      />
                     </label>
                   </>
                 ) : (
                   <img
-                    src={userData?.profilePic || '/profilepic.jpg'}
+                    src={userData?.profilePic || '/user.png'}
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />

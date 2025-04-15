@@ -9,9 +9,25 @@ const recipeSchema = new mongoose.Schema({
     type: Buffer,
     required: true
   },
+  ingredients: [{
+    type: String,
+    required: true
+  }],
   instructions: [{ 
     type: String 
   }],
+  prepTime: {
+    type: Number,
+    default: 0
+  },
+  cookTime: {
+    type: Number,
+    default: 0
+  },
+  servings: {
+    type: Number,
+    default: 1
+  },
   mealType: [{ 
     type: String 
   }],
@@ -29,9 +45,9 @@ const recipeSchema = new mongoose.Schema({
     default: false 
   },
   owner: { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: 'User', 
-      required: true 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: true 
   },
   index: { 
     type: Number, 
