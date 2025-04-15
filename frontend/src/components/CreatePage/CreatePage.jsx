@@ -160,6 +160,28 @@ function CreatePage() {
         fetchUserRecipes();
       }
     }, [view]);
+
+    const handleDeleteRecipe = async (id) => {
+      try {
+        await axios.delete(`/api/recipes/${id}`);
+        setRecipes(prev => prev.filter(recipe => recipe._id !== id));
+      } catch (err) {
+        console.error("Error deleting recipe:", err);
+      }
+    };
+    
+    const toggleRecipePrivacy = async (id, currentStatus) => {
+      try {
+        const updated = await axios.put(`/api/recipes/${id}`, { isPublic: !currentStatus });
+        setRecipes(prev =>
+          prev.map(recipe =>
+            recipe._id === id ? { ...recipe, isPublic: updated.data.isPublic } : recipe
+          )
+        );
+      } catch (err) {
+        console.error("Error updating recipe privacy:", err);
+      }
+    };    
   
     return (
       <div className="p-6 max-w-5xl mx-auto back">
@@ -182,22 +204,39 @@ function CreatePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {recipes.length > 0 ? (
               recipes.map(recipe => (
-                <div key={recipe._id} className="relative rounded-lg overflow-hidden shadow hover:shadow-lg transition group">
-                  <div className="block w-full h-64 bg-gray-100">
+                <div
+                  key={recipe._id}
+                  className="relative rounded-lg overflow-hidden shadow hover:shadow-lg transition group"
+                >
+                  <Link to={`/recipe/${recipe._id}`} className="block w-full h-64">
                     <img
                       src={recipe.image ? `data:image/jpeg;base64,${recipe.image}` : ""}
                       alt={recipe.title}
                       className="w-full h-full object-cover"
                     />
-                  </div>
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="text-white text-lg font-semibold bg-black/50 px-3 py-1 rounded-md text-center">
-                      {recipe.title}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="text-white text-lg font-semibold bg-black/50 px-3 py-1 rounded-md translate-y-[-20%] text-center">
+                        {recipe.title}
+                      </div>
                     </div>
-                  </div>
-                  <div className="absolute bottom-2 right-2 bg-white/80 p-1.5 rounded-full">
+                  </Link>
+
+                  <button
+                    onClick={() => handleDeleteRecipe(recipe._id)}
+                    className="absolute top-2 right-2 bg-white/80 text-gray-500 hover:text-red-600 p-1.5 rounded-full z-5 transition"
+                  >
+                    <svg className="w-4 h-4 fill-current" viewBox="0 0 36 36">
+                      <path d="M6,9V31a2.93,2.93,0,0,0,2.86,3H27.09A2.93,2.93,0,0,0,30,31V9Zm9,20H13V14h2Zm8,0H21V14h2Z"></path>
+                      <path d="M30.73,5H23V4A2,2,0,0,0,21,2h-6.2A2,2,0,0,0,13,4V5H5A1,1,0,1,0,5,7H30.73a1,1,0,0,0,0-2Z"></path>
+                    </svg>
+                  </button>
+
+                  <button
+                    onClick={() => toggleRecipePrivacy(recipe._id, recipe.isPublic)}
+                    className="absolute bottom-2 right-2 bg-white/80 text-gray-700 hover:text-gray-900 p-1.5 rounded-full z-5"
+                  >
                     {recipe.isPublic ? <FaLockOpen size={18} /> : <FaLock size={18} />}
-                  </div>
+                  </button>
                 </div>
               ))
             ) : (

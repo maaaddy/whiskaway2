@@ -8,6 +8,7 @@ const { hashPassword, comparePassword } = require('./helpers/auth');
 const Recipe = require('./models/Recipe');
 const Message = require('./models/Message');
 const Cookbook = require('./models/Cookbook');
+const Comment = require('./models/Comment');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const multer = require('multer');
@@ -160,6 +161,7 @@ app.get('/api/profile/:username?', async (req, res) => {
 
         res.json({
           _id: user.userInfo._id.toString(),
+          userId: user._id.toString(),
           username: user.username,
           userInfo: user.userInfo._id.toString(),
           fName: user.userInfo.fName,
@@ -465,7 +467,19 @@ app.get('/api/cookbook/:id', verifyToken, async (req, res) => {
       return res.status(404).json({ message: 'Cookbook not found or access denied' });
     }
 
-    res.status(200).json(cookbook);
+    const isOwner = cookbook.owner.toString() === userId;
+    const validRecipes = cookbook.recipes.filter(Boolean);
+
+    const filteredRecipes = validRecipes.filter(recipe => {
+      if (typeof recipe === 'string') return true;
+      if (isOwner) return true;
+      return recipe.isPublic;
+    });
+
+    res.status(200).json({
+      ...cookbook.toObject(),
+      recipes: filteredRecipes.map(r => (typeof r === 'object' ? r._id : r))
+    });
   } catch (err) {
     console.error('Error fetching cookbook:', err);
     res.status(500).json({ error: 'Error fetching cookbook' });
@@ -509,6 +523,27 @@ app.post('/api/cookbook/:id/addRecipe', verifyToken, async (req, res) => {
   } catch (err) {
     console.error('Error adding recipe to cookbook:', err);
     res.status(500).json({ error: 'Error adding recipe to cookbook' });
+  }
+});
+
+app.delete('/api/cookbook/:id/removeRecipe/:recipeId', verifyToken, async (req, res) => {
+  const { id, recipeId } = req.params;
+  const userId = req.userId;
+
+  try {
+    const cookbook = await Cookbook.findOne({ _id: id, owner: userId });
+
+    if (!cookbook) {
+      return res.status(404).json({ error: 'Cookbook not found or unauthorized' });
+    }
+
+    cookbook.recipes = cookbook.recipes.filter(r => r.toString() !== recipeId);
+    await cookbook.save();
+
+    res.status(200).json({ message: 'Recipe removed from cookbook' });
+  } catch (err) {
+    console.error('Error removing recipe:', err);
+    res.status(500).json({ error: 'Error removing recipe from cookbook' });
   }
 });
 
@@ -776,6 +811,96 @@ app.get('/api/recipes/user/:username', async (req, res) => {
   } catch (error) {
     console.error('Error fetching public recipes by username:', error);
     res.status(500).json({ error: 'Failed to fetch public recipes' });
+  }
+});
+
+app.get('/api/recipes/:id', verifyToken, async (req, res) => {
+  try {
+    const recipe = await Recipe.findById(req.params.id);
+
+    if (!recipe) {
+      return res.status(404).json({ error: 'Recipe not found' });
+    }
+
+    const isOwner = recipe.owner.toString() === req.userId;
+
+    if (!recipe.isPublic && !isOwner) {
+      return res.status(403).json({ error: 'Unauthorized to view this recipe' });
+    }
+
+    const imageBase64 = recipe.image
+      ? recipe.image.toString('base64')
+      : null;
+
+    res.status(200).json({
+      ...recipe.toObject(),
+      image: imageBase64,
+    });
+  } catch (error) {
+    console.error('Error fetching recipe by ID:', error);
+    res.status(500).json({ error: 'Failed to fetch recipe' });
+  }
+});
+
+app.put('/api/recipes/:id', verifyToken, async (req, res) => {
+  const { isPublic } = req.body;
+  try {
+    const updated = await Recipe.findByIdAndUpdate(req.params.id, { isPublic }, { new: true });
+    res.json(updated);
+  } catch (err) {
+    console.error('Error updating recipe:', err);
+    res.status(500).json({ error: 'Failed to update recipe' });
+  }
+});
+
+app.delete('/api/recipes/:id', verifyToken, async (req, res) => {
+  try {
+    await Recipe.findByIdAndDelete(req.params.id);
+    res.status(200).json({ message: 'Recipe deleted' });
+  } catch (err) {
+    console.error('Error deleting recipe:', err);
+    res.status(500).json({ error: 'Failed to delete recipe' });
+  }
+});
+
+//Commenting on user recipes.
+app.post('/api/recipes/:id/comments', verifyToken, async (req, res) => {
+  const { text } = req.body;
+  const { id } = req.params;
+
+  try {
+    const user = await User.findById(req.userId);
+    const comment = await Comment.create({
+      recipeId: id,
+      userId: user._id,
+      username: user.username,
+      text
+    });
+
+    res.status(201).json(comment);
+  } catch (err) {
+    console.error("Failed to post comment:", err);
+    res.status(500).json({ error: "Could not post comment" });
+  }
+});
+
+app.get('/api/recipes/:id/comments', async (req, res) => {
+  try {
+    const comments = await Comment.find({ recipeId: req.params.id }).sort({ createdAt: -1 });
+    res.json(comments);
+  } catch (err) {
+    console.error("Failed to fetch comments:", err);
+    res.status(500).json({ error: "Could not fetch comments" });
+  }
+});
+
+app.get('/api/recipes/:id/comments/count', async (req, res) => {
+  try {
+    const count = await Comment.countDocuments({ recipeId: req.params.id });
+    res.json({ count });
+  } catch (err) {
+    console.error("Failed to get comment count:", err);
+    res.status(500).json({ error: "Could not fetch comment count" });
   }
 });
 
