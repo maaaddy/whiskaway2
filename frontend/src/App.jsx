@@ -16,6 +16,7 @@ import Login from './components/User/Login';
 import GetStarted from './components/User/GetStarted';
 import axios from 'axios';
 import NotificationsPage from './components/NotificationsPage/NotificationsPage';
+import SettingsPage from './components/SettingsPage/SettingsPage';
 import { UserContextProvider } from "./context/UserContext";
 
 function App() {
@@ -72,6 +73,7 @@ function App() {
                             <Route path="/cookbook/:id" element={<CookbookDetailPage />} />
                             <Route path="/about" element={<About />} />
                             <Route path="/notifications" element={<NotificationsPage />} />
+                            <Route path="/settings" element={<SettingsPage />} />
                             <Route path="*" element={<Navigate to="/" />} />
                         </>
                     ) : (

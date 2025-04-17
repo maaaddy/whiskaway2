@@ -461,7 +461,7 @@ function ProfilePage() {
                     )}
                     </p>
                     <div className="flex gap-3 mt-3">
-                      <button onClick={copyProfileLink} className="bg-blue-200 hover:bg-blue-300 rounded-full px-4 py-2 font-semibold">Share</button>
+                      <button onClick={copyProfileLink} className="bg-teal-500 hover:bg-teal-600 rounded-full px-4 py-2 font-semibold">Share</button>
                       {currentUser === userData?.username ? (
                         <button onClick={handleEditToggle} className="bg-gray-200 hover:bg-gray-300 rounded-full px-4 py-2 font-semibold">Edit Profile</button>
                       ) : isFriend ? (

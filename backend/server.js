@@ -6,6 +6,7 @@ const User = require('./models/User');
 const UserInfo = require('./models/UserInfo');
 const { hashPassword, comparePassword } = require('./helpers/auth');
 const Recipe = require('./models/Recipe');
+const RecipeLike = require('./models/Like');
 const Message = require('./models/Message');
 const Cookbook = require('./models/Cookbook');
 const Comment = require('./models/Comment');
@@ -14,6 +15,7 @@ const cookieParser = require('cookie-parser');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const axios = require('axios');
 
 dotenv.config();
 
@@ -170,6 +172,7 @@ app.get('/api/profile/:username?', async (req, res) => {
           profilePic: profilePicBase64,
           coverImage: coverImageBase64,
           friends: user.userInfo.friends.length,
+          intolerances: user.userInfo.intolerances || [],
         });
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -257,6 +260,30 @@ app.post('/api/addFriend', async (req, res) => {
   } catch (error) {
     console.error('Error adding friend:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.put('/api/friends/remove', async (req, res) => {
+  const { userId, friendId } = req.body;
+
+  try {
+    const userInfo = await UserInfo.findById(userId);
+    const friendInfo = await UserInfo.findById(friendId);
+
+    if (!userInfo || !friendInfo) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    userInfo.friends = userInfo.friends.filter(id => id.toString() !== friendId);
+    friendInfo.friends = friendInfo.friends.filter(id => id.toString() !== userId);
+
+    await userInfo.save();
+    await friendInfo.save();
+
+    res.json({ message: "Friend removed successfully" });
+  } catch (err) {
+    console.error("Error removing friend:", err);
+    res.status(500).json({ error: "Failed to remove friend" });
   }
 });
 
@@ -901,6 +928,104 @@ app.get('/api/recipes/:id/comments/count', async (req, res) => {
   } catch (err) {
     console.error("Failed to get comment count:", err);
     res.status(500).json({ error: "Could not fetch comment count" });
+  }
+});
+
+//Liking recipe time
+app.post('/api/recipes/:id/like', verifyToken, async (req, res) => {
+  const recipeId = req.params.id;
+  const userId = req.userId;
+
+  try {
+    const existing = await RecipeLike.findOne({ recipeId, userId });
+
+    if (existing) {
+      await existing.deleteOne();
+    } else {
+      await RecipeLike.create({ recipeId, userId });
+    }
+
+    const likeCount = await RecipeLike.countDocuments({ recipeId });
+    const liked = !existing;
+
+    res.json({ liked, likeCount });
+  } catch (err) {
+    console.error("Error toggling like:", err);
+    res.status(500).json({ error: 'Failed to toggle like' });
+  }
+});
+
+app.get('/api/recipes/:id/likes', verifyToken, async (req, res) => {
+  const recipeId = req.params.id;
+  const userId = req.userId;
+
+  try {
+    const liked = await RecipeLike.exists({ recipeId, userId });
+    const likeCount = await RecipeLike.countDocuments({ recipeId });
+    res.json({ liked: Boolean(liked), likeCount });
+  } catch (err) {
+    console.error("Error fetching like data:", err);
+    res.status(500).json({ error: 'Failed to fetch like data' });
+  }
+});
+
+//settings page start
+app.put('/api/settings/username', verifyToken, async (req, res) => {
+  const { currentPassword, newUsername } = req.body;
+
+  try {
+    const user = await User.findById(req.userId);
+    const valid = await comparePassword(currentPassword, user.password);
+    if (!valid) return res.status(401).json({ error: "Invalid password" });
+
+    const existing = await User.findOne({ username: newUsername });
+    if (existing && existing._id.toString() !== user._id.toString()) {
+      return res.status(400).json({ error: 'Username already taken' });
+    }
+
+    user.username = newUsername;
+    await user.save();
+    res.json({ message: "Username updated" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to update username" });
+  }
+});
+
+app.put('/api/settings/password', verifyToken, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const valid = await comparePassword(currentPassword, user.password);
+    if (!valid) return res.status(401).json({ error: "Invalid password" });
+
+    const hashed = await hashPassword(newPassword);
+    user.password = hashed;
+    await user.save();
+
+    res.json({ message: "Password updated" });
+  } catch (err) {
+    console.error('Password update error:', err);
+    res.status(500).json({ error: "Password update failed" });
+  }
+});
+
+app.put('/api/settings/intolerances', verifyToken, async (req, res) => {
+  const { intolerances } = req.body;
+  try {
+    const user = await User.findById(req.userId).populate('userInfo');
+    if (!user || !user.userInfo) return res.status(404).json({ error: "User not found" });
+
+    user.userInfo.intolerances = intolerances;
+    await user.userInfo.save();
+
+    res.json({ message: "Intolerances updated" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Intolerance update failed" });
   }
 });
 

@@ -4,13 +4,6 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true,
-        validate: {
-            validator: async function (value) {
-                const user = await this.constructor.findOne({ username: value });
-                return !user;
-            },
-            message: 'Username already exists',
-        },
     },
     password: {
         type: String,
