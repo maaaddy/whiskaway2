@@ -278,6 +278,9 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
             )}
 
             <div className="flex items-center space-x-5 text-teal-700">
+                <Link to="/about" className="hover:text-gray-700 transition">
+                    <FontAwesomeIcon icon={faCog} size="lg" />
+                </Link>
                 <Link to="/notifications" className="relative hover:text-yellow-600 transition">
                 <FontAwesomeIcon icon={faBell} size="lg" />
                     {requestCount > 0 && (
@@ -286,7 +289,7 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
                         </span>
                     )}
                 </Link>
-                <Link to="/about" className="hover:text-gray-700 transition">
+                <Link to="/settings" className="hover:text-gray-700 transition">
                     <FontAwesomeIcon icon={faCog} size="lg" />
                 </Link>
                 <a href="/" onClick={(e) => { e.preventDefault(); onLogout(); }} className="hover:text-red-500 transition">

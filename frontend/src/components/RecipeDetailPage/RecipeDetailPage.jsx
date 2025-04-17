@@ -3,6 +3,8 @@ import axios from 'axios';
 import { useParams } from 'react-router-dom';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faPaperPlane, faBlender, faListOl, faSeedling, faBookMedical, faComment, faAngleDown, faAngleUp } from "@fortawesome/free-solid-svg-icons";
+import { faHeart as heartSolid } from "@fortawesome/free-solid-svg-icons";
+import { faHeart as heartOutline } from "@fortawesome/free-regular-svg-icons";
 
 function RecipeDetailPage() {
     const [recipe, setRecipe] = useState(null);
@@ -12,6 +14,8 @@ function RecipeDetailPage() {
     const [commentsLoaded, setCommentsLoaded] = useState(false);
     const [showComments, setShowComments] = useState(false);
     const [commentCount, setCommentCount] = useState(0);
+    const [likeCount, setLikeCount] = useState(0);
+    const [isLiked, setIsLiked] = useState(false);
     const [visibleComments, setVisibleComments] = useState(3);
     const [cookbooks, setCookbooks] = useState([]);
     const [selectedCookbook, setSelectedCookbook] = useState('');
@@ -93,8 +97,19 @@ function RecipeDetailPage() {
             }
         };
           
-        fetchCommentCount();          
-
+        fetchCommentCount();       
+        
+        const fetchLikes = async () => {
+            try {
+            const res = await axios.get(`/api/recipes/${id}/likes`);
+            setLikeCount(res.data.likeCount);
+            setIsLiked(res.data.liked);
+            } catch (err) {
+            console.error("Failed to fetch likes:", err);
+            }
+        };
+        fetchLikes();
+  
         const fetchEquipment = async () => {
             try {
                 const res = await axios.get(`https://api.spoonacular.com/recipes/${id}/equipmentWidget.json?apiKey=${API_KEY}`);
@@ -165,7 +180,17 @@ function RecipeDetailPage() {
           console.error("Failed to post comment:", err);
         }
     };
-    
+
+    const handleLike = async () => {
+        try {
+          const res = await axios.post(`/api/recipes/${id}/like`);
+          setLikeCount(res.data.likeCount);
+          setIsLiked(res.data.liked);
+        } catch (err) {
+          console.error("Failed to toggle like:", err);
+        }
+      };
+      
     if (!recipe) return <p>Loading recipe...</p>;
 
     return (
@@ -220,6 +245,17 @@ function RecipeDetailPage() {
                     </p>
                 </div>
                 <div className="relative flex gap-2 items-center sm:self-start">
+
+                    <button
+                        onClick={handleLike}
+                        className="flex items-center gap-1 text-lg hover:opacity-75 transition"
+                        >
+                        <FontAwesomeIcon
+                            icon={isLiked ? heartSolid : heartOutline}
+                            className={isLiked ? "text-red-500" : "text-gray-500"}
+                        />
+                        <span>{likeCount}</span>
+                    </button>
 
                     <div className="relative">
                         <select

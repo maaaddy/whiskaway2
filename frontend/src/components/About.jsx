@@ -16,7 +16,6 @@ function About() {
             <div className='bg-gray-200'>
                 <span className='text-xl'>Profile Section:</span>
             </div>
-            <p>Horizontal Scroll Bar for recipes & cookbooks.</p>
             <br></br>
             <div className='bg-gray-200'>
                 <span className='text-xl'>HomePage Section:</span>
@@ -48,6 +47,9 @@ function About() {
             <p>Saved recipes area, for when you like a recipe and dont have a book for it yet.</p>
             <p>When i remove the last filter from the filter, refresh</p>
             <p>Filter shouldnt close every time I change something.</p>
+            <p>Need to create loading states for a lot of things...</p>
+            <p>For example, loading messages, loading recieps, loading cookbooks, loading personal recipes,</p>
+            <p>Instead of "Failed to add recipe" if it's already in a cookbook, maybe tell the user it's already in there.</p>
             <div className='pb-24'></div>
         </div>
     );

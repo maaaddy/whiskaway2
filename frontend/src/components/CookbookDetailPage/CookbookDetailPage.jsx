@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import axiosRateLimit from 'axios-rate-limit';
 import { useParams, Link } from 'react-router-dom';
+import toast, { Toaster } from 'react-hot-toast';
 
 const axiosInstance = axiosRateLimit(axios.create(), { maxRequests: 5, perMilliseconds: 1000 });
 
@@ -81,17 +82,22 @@ function CookbookDetailPage() {
   }, [id, API_KEY]);
 
   const handleRemoveRecipe = async (idToRemove) => {
+    const confirmed = window.confirm('Are you sure you want to remove this recipe?');
+    if (!confirmed) return;
+
     try {
       await axios.delete(`/api/cookbook/${id}/removeRecipe/${idToRemove}`);
       localStorage.removeItem(`cookbook_${id}`);
       setRecipes((prev) => prev.filter((r) => r.id !== idToRemove));
+      toast.success('Recipe removed');
     } catch (err) {
-      console.error('Failed to remove recipe:', err);
+      toast.error('Failed to remove recipe');
     }
   };      
 
   return (
     <div className="back max-w-6xl mx-auto p-6 pb-20">
+      <Toaster position='top-right' />
       {loading ? (
         <p className="text-center text-lg text-gray-600 mt-20">Loading your cookbook...</p>
         ) : (

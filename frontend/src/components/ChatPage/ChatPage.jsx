@@ -91,7 +91,7 @@ function ChatPage({ closeChat, initialUserId }) {
   });
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-80 h-[60vh] bg-white rounded-xl shadow-xl overflow-hidden border flex flex-col">
+    <div className="fixed bottom-4 right-4 z-50 w-80 h-[60vh] bg-white rounded-lg shadow-md overflow-hidden border flex flex-col">
       {!selectedUser ? (
         <>
           <div className="pt-3 px-4 flex items-center justify-between">
