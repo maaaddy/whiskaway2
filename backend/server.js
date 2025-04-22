@@ -6,7 +6,7 @@ const User = require('./models/User');
 const UserInfo = require('./models/UserInfo');
 const { hashPassword, comparePassword } = require('./helpers/auth');
 const Recipe = require('./models/Recipe');
-const RecipeLike = require('./models/Like');
+const Like = require('./models/Like');
 const Message = require('./models/Message');
 const Cookbook = require('./models/Cookbook');
 const Comment = require('./models/Comment');
@@ -937,15 +937,15 @@ app.post('/api/recipes/:id/like', verifyToken, async (req, res) => {
   const userId = req.userId;
 
   try {
-    const existing = await RecipeLike.findOne({ recipeId, userId });
+    const existing = await Like.findOne({ recipeId, userId });
 
     if (existing) {
       await existing.deleteOne();
     } else {
-      await RecipeLike.create({ recipeId, userId });
+      await Like.create({ recipeId, userId });
     }
 
-    const likeCount = await RecipeLike.countDocuments({ recipeId });
+    const likeCount = await Like.countDocuments({ recipeId });
     const liked = !existing;
 
     res.json({ liked, likeCount });
@@ -960,8 +960,8 @@ app.get('/api/recipes/:id/likes', verifyToken, async (req, res) => {
   const userId = req.userId;
 
   try {
-    const liked = await RecipeLike.exists({ recipeId, userId });
-    const likeCount = await RecipeLike.countDocuments({ recipeId });
+    const liked = await Like.exists({ recipeId, userId });
+    const likeCount = await Like.countDocuments({ recipeId });
     res.json({ liked: Boolean(liked), likeCount });
   } catch (err) {
     console.error("Error fetching like data:", err);
@@ -1026,6 +1026,184 @@ app.put('/api/settings/intolerances', verifyToken, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Intolerance update failed" });
+  }
+});
+
+app.get('/api/admin/users', async (req, res) => {
+  try {
+    const { query, from, to } = req.query;
+    const filter = {};
+
+    if (query) {
+      filter.username = { $regex: query, $options: 'i' };
+    }
+
+    const users = await User.find(filter)
+    res.json(users);
+  } catch (err) {
+    console.error('Admin list users error:', err);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+app.delete('/api/admin/users/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    await User.findByIdAndDelete(userId);
+    await Comment.deleteMany({ userId });
+    await Like.deleteMany({ userId });
+    res.json({ message: 'User removed' });
+  } catch (err) {
+    console.error('Admin remove user error:', err);
+    res.status(500).json({ error: 'Failed to remove user' });
+  }
+});
+
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+app.get('/api/admin/top-commented', async (req, res) => {
+  try {
+    const top = await Comment.aggregate([
+      { $group: { _id: '$recipeId', commentCount: { $sum: 1 } } },
+      { $sort: { commentCount: -1 } },
+      { $limit: 5 },
+
+      { $addFields: {
+          recipeObjId: {
+            $convert: {
+              input: '$_id',
+              to: 'objectId',
+              onError: null,
+              onNull: null
+            }
+          }
+      }},
+
+      { $lookup: {
+          from: 'recipes',
+          localField: 'recipeObjId',
+          foreignField: '_id',
+          as: 'internal'
+      }},
+      { $unwind: { path: '$internal', preserveNullAndEmptyArrays: true } },
+
+      { $project: {
+          recipeId:    '$_id',
+          commentCount: 1,
+          title:       '$internal.title'
+      }}
+    ]);
+
+    const key     = process.env.SPOONACULAR_KEY;
+    const results = [];
+
+    for (const item of top) {
+      let title = item.title;
+      if (!title && key) {
+        await delay(200);
+        try {
+          const { data } = await axios.get(
+            `https://api.spoonacular.com/recipes/${item.recipeId}/information`,
+            { params: { apiKey: key } }
+          );
+          title = data.title;
+        } catch (e) {
+          console.warn(`Spoonacular lookup failed for ${item.recipeId}:`, e.message);
+        }
+      }
+      results.push({
+        recipeId:     item.recipeId,
+        commentCount: item.commentCount,
+        title:        title || `External ID: ${item.recipeId}`
+      });
+    }
+
+    res.json(results);
+  } catch (err) {
+    console.error('Admin top commented error:', err);
+    res.status(500).json({ error: 'Failed to fetch top commented' });
+  }
+});
+
+app.get('/api/admin/top-liked', async (req, res) => {
+  try {
+    const top = await Like.aggregate([
+      { $group: { _id: '$recipeId', likeCount: { $sum: 1 } } },
+      { $sort: { likeCount: -1 } },
+      { $limit: 5 },
+      { $addFields: {
+          recipeObjId: {
+            $convert: { input: '$_id', to: 'objectId', onError: null, onNull: null }
+          }
+      }},
+      { $lookup: {
+          from: 'recipes',
+          localField: 'recipeObjId',
+          foreignField: '_id',
+          as: 'internal'
+      }},
+      { $unwind: { path: '$internal', preserveNullAndEmptyArrays: true } },
+      { $project: {
+          recipeId: '$_id',
+          likeCount: 1,
+          title: '$internal.title'
+      }}
+    ]);
+
+    const key = process.env.SPOONACULAR_KEY;
+    const results = [];
+
+    for (const item of top) {
+      let title = item.title;
+      if (!title && key) {
+        await delay(200);
+        try {
+          const { data } = await axios.get(
+            `https://api.spoonacular.com/recipes/${item.recipeId}/information`,
+            { params: { apiKey: key } }
+          );
+          title = data.title;
+        } catch (e) {
+          console.warn(`Spoonacular fetch failed for ${item.recipeId}:`, e.message);
+        }
+      }
+      results.push({
+        recipeId: item.recipeId,
+        likeCount: item.likeCount,
+        title: title || `External ID: ${item.recipeId}`
+      });
+    }
+
+    res.json(results);
+  } catch (err) {
+    console.error('Admin top liked error:', err);
+    res.status(500).json({ error: 'Failed to fetch top liked' });
+  }
+});
+
+app.get('/api/admin/spoonacular-popular', async (req, res) => {
+  try {
+    const { data } = await axios.get(
+      `https://api.spoonacular.com/recipes/complexSearch`,
+      {
+        params: {
+          apiKey: process.env.SPOONACULAR_KEY,
+          sort: 'popularity',
+          number: 5,
+          addRecipeInformation: true
+        }
+      }
+    );
+    res.json(data.results.map(r => ({
+      id: r.id,
+      title: r.title,
+      image: r.image
+    })));
+  } catch (err) {
+    console.error('Admin spoonacular error:', err);
+    res.status(500).json({ error: 'Failed to fetch Spoonacular data' });
   }
 });
 
