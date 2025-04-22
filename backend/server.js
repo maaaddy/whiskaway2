@@ -810,6 +810,24 @@ app.get('/api/my-recipes', verifyToken, async (req, res) => {
   }
 });
 
+app.get('/api/public-recipes', async (req, res) => {
+  try {
+    const publicRecipes = await Recipe.find({ isPublic: true })
+      .sort({ createdAt: -1 })
+      .populate('owner', 'username');
+
+    const recipesWithImage = publicRecipes.map(r => ({
+      ...r.toObject(),
+      image: r.image ? r.image.toString('base64') : null,
+    }));
+
+    res.json(recipesWithImage);
+  } catch (error) {
+    console.error('Error fetching public recipes:', error);
+    res.status(500).json({ error: 'Failed to fetch public recipes' });
+  }
+});
+
 app.get('/api/recipes/user/:username', async (req, res) => {
   try {
     const { username } = req.params;
