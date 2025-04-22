@@ -18,6 +18,7 @@ import axios from 'axios';
 import NotificationsPage from './components/NotificationsPage/NotificationsPage';
 import SettingsPage from './components/SettingsPage/SettingsPage';
 import { UserContextProvider } from "./context/UserContext";
+import Ojofrdkcvbfzdubabiszbvfdjnbduipw from './components/Ojofrdkcvbfzdubabiszbvfdjnbduipw/Ojofrdkcvbfzdubabiszbvfdjnbduipw';
 
 function App() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -65,6 +66,7 @@ function App() {
                 <Routes>
                     {isLoggedIn ? ( 
                         <>
+                            <Route path="/admin/" element={<Ojofrdkcvbfzdubabiszbvfdjnbduipw />} />
                             <Route path="/" element={<HomePage searchQuery={searchQuery} recipeFilter={recipeFilter} />} />
                             <Route path="/recipe/:id" element={<RecipeDetailPage />} />
                             <Route path="/add-recipe" element={<CreatePage />} />
