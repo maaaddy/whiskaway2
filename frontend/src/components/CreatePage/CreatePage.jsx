@@ -184,7 +184,7 @@ function CreatePage() {
     };    
   
     return (
-      <div className="p-6 max-w-5xl mx-auto back">
+      <div className="p-6 max-w-5xl mx-auto py-16">
         <div className="flex justify-center space-x-8 mb-6">
           <button
             className={`text-lg font-medium pb-2 ${view === 'myRecipes' ? 'border-b-2 border-teal-600 text-teal-600' : 'text-gray-600'} transition`}
