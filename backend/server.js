@@ -16,6 +16,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
+const Notification = require('./models/Notification');
 
 dotenv.config();
 
@@ -38,6 +39,13 @@ app.use(cookieParser());
 
 const PORT = 5000;
 // End Set Up -----------------------------------------------------------
+async function createNotification(type, fromUser, toUser, data = {}) {
+  try {
+    await Notification.create({ type, fromUser, toUser, data });
+  } catch (err) {
+    console.error("Error creating notification:", err);
+  }
+}
 
 app.get('/api/test', (_req, res) => {
   res.json('Test successful.');
@@ -335,12 +343,13 @@ app.post('/api/friend-request', async (req, res) => {
     const recipient = await UserInfo.findById(toId);
     if (!recipient) return res.status(404).json({ error: 'Recipient not found' });
 
-    if (recipient.friendRequests.includes(fromId)) {
+    if (recipient.friendRequests.some(id => id.toString() === fromId)) {
       return res.status(400).json({ error: 'Request already sent' });
     }
 
     recipient.friendRequests.push(fromId);
     await recipient.save();
+    await createNotification('friend_request', fromId, toId);
 
     res.json({ message: 'Friend request sent' });
   } catch (err) {
@@ -377,6 +386,7 @@ app.get('/api/friend-requests/:userInfoId', async (req, res) => {
 app.post('/api/friend-request/accept', async (req, res) => {
   const { currentUserId, requesterId } = req.body;
 
+  console.log("Accepting Friend Request:", currentUserId, "<-", requesterId);
   try {
     const currentUser = await UserInfo.findById(currentUserId);
     const requester = await UserInfo.findById(requesterId);
@@ -385,20 +395,22 @@ app.post('/api/friend-request/accept', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    if (!currentUser.friends.includes(requesterId)) {
-      currentUser.friends.push(requesterId);
+    const alreadyRequested = currentUser.friendRequests.some(id => id.toString() === requesterId);
+    const alreadyFriends = currentUser.friends.includes(requesterId);
+
+    if (!alreadyRequested || alreadyFriends) {
+      return res.status(400).json({ error: 'Friend request already handled.' });
     }
 
-    if (!requester.friends.includes(currentUserId)) {
-      requester.friends.push(currentUserId);
-    }
-
+    currentUser.friends.push(requesterId);
+    requester.friends.push(currentUserId);
     currentUser.friendRequests = currentUser.friendRequests.filter(
       id => id.toString() !== requesterId
     );
 
     await currentUser.save();
     await requester.save();
+    await createNotification('friend_accept', currentUserId, requesterId);
 
     res.json({ message: 'Friend request accepted' });
   } catch (err) {
@@ -410,9 +422,16 @@ app.post('/api/friend-request/accept', async (req, res) => {
 app.post('/api/friend-request/deny', async (req, res) => {
   const { currentUserId, requesterId } = req.body;
 
+  console.log("Denying Friend Request:", currentUserId, "<-", requesterId);
+
   try {
     const currentUser = await UserInfo.findById(currentUserId);
     if (!currentUser) return res.status(404).json({ error: 'User not found' });
+
+    const requestExists = currentUser.friendRequests.some(id => id.toString() === requesterId);
+    if (!requestExists) {
+      return res.status(400).json({ error: 'Request already denied or accepted.' });
+    }
 
     currentUser.friendRequests = currentUser.friendRequests.filter(
       id => id.toString() !== requesterId
@@ -861,14 +880,15 @@ app.get('/api/recipes/user/:username', async (req, res) => {
 
 app.get('/api/recipes/:id', verifyToken, async (req, res) => {
   try {
-    const recipe = await Recipe.findById(req.params.id);
+    const recipe = await Recipe
+      .findById(req.params.id)
+      .populate('owner', 'username');
 
     if (!recipe) {
       return res.status(404).json({ error: 'Recipe not found' });
     }
 
-    const isOwner = recipe.owner.toString() === req.userId;
-
+    const isOwner = recipe.owner._id.toString() === req.userId;
     if (!recipe.isPublic && !isOwner) {
       return res.status(403).json({ error: 'Unauthorized to view this recipe' });
     }
@@ -914,14 +934,30 @@ app.post('/api/recipes/:id/comments', verifyToken, async (req, res) => {
   const { id } = req.params;
 
   try {
-    const user = await User.findById(req.userId);
+    const user = await User.findById(req.userId).populate('userInfo');
+
     const comment = await Comment.create({
       recipeId: id,
-      userId: user._id,
+      userId: user.userInfo._id,
       username: user.username,
       text
     });
 
+    const recipe = await Recipe.findById(id);
+
+    if (recipe && recipe.isPublic) {
+      const ownerUser = await User.findById(recipe.owner).populate('userInfo');
+      const ownerInfoId = ownerUser.userInfo._id.toString();
+    
+      if (ownerInfoId !== user.userInfo._id.toString()) {
+        await createNotification(
+          'recipe_comment',
+          user.userInfo._id,
+          ownerInfoId,
+          { recipeId: id, commentId: comment._id }
+        );
+      }
+    }
     res.status(201).json(comment);
   } catch (err) {
     console.error("Failed to post comment:", err);
@@ -952,20 +988,38 @@ app.get('/api/recipes/:id/comments/count', async (req, res) => {
 //Liking recipe time
 app.post('/api/recipes/:id/like', verifyToken, async (req, res) => {
   const recipeId = req.params.id;
-  const userId = req.userId;
 
   try {
-    const existing = await Like.findOne({ recipeId, userId });
+    const user = await User.findById(req.userId).populate('userInfo');
 
+    const existing = await Like.findOne({ recipeId, userId: req.userId });
+    let liked;
     if (existing) {
       await existing.deleteOne();
+      liked = false;
     } else {
-      await Like.create({ recipeId, userId });
+      await Like.create({ recipeId, userId: req.userId });
+      liked = true;
+    }
+
+    if (liked) {
+      const recipe = await Recipe.findById(recipeId);
+      if (recipe && recipe.isPublic) {
+        const ownerUser = await User.findById(recipe.owner).populate('userInfo');
+        const ownerInfoId = ownerUser.userInfo._id.toString();
+
+        if (ownerInfoId !== user.userInfo._id.toString()) {
+          await createNotification(
+            'recipe_like',
+            user.userInfo._id,
+            ownerInfoId,
+            { recipeId }
+          );
+        }
+      }
     }
 
     const likeCount = await Like.countDocuments({ recipeId });
-    const liked = !existing;
-
     res.json({ liked, likeCount });
   } catch (err) {
     console.error("Error toggling like:", err);
@@ -1222,6 +1276,54 @@ app.get('/api/admin/spoonacular-popular', async (req, res) => {
   } catch (err) {
     console.error('Admin spoonacular error:', err);
     res.status(500).json({ error: 'Failed to fetch Spoonacular data' });
+  }
+});
+
+//More realistic notification system time lol
+app.post('/api/notifications', async (req, res) => {
+  try {
+    const { type, fromUser, toUser, data } = req.body;
+    const notif = await Notification.create({ type, fromUser, toUser, data });
+    res.status(201).json(notif);
+  } catch (err) {
+    console.error("Notification create error:", err);
+    res.status(500).json({ error: "Could not create notification" });
+  }
+});
+
+app.get('/api/notifications/:userInfoId', async (req, res) => {
+  try {
+    const notifs = await Notification
+      .find({ toUser: req.params.userInfoId })
+      .populate('fromUser', 'fName lName profilePic')
+      .sort({ createdAt: -1 });
+
+    const enriched = await Promise.all(notifs.map(async (notif) => {
+      const userDoc = await User.findOne({ userInfo: notif.fromUser._id }).select('username');
+
+      return {
+        ...notif.toObject(),
+        fromUser: {
+          ...notif.fromUser.toObject(),
+          username: userDoc?.username || 'unknown'
+        }
+      };
+    }));
+
+    res.json(enriched);
+  } catch (err) {
+    console.error("Notification fetch error:", err);
+    res.status(500).json({ error: "Could not fetch notifications" });
+  }
+});
+
+app.put('/api/notifications/:id/read', async (req, res) => {
+  try {
+    const notif = await Notification.findByIdAndUpdate(req.params.id, { read: true }, { new: true });
+    res.json(notif);
+  } catch (err) {
+    console.error("Notification read error:", err);
+    res.status(500).json({ error: "Could not update notification" });
   }
 });
 
