@@ -4,6 +4,7 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { ScrollMenu, VisibilityContext } from 'react-horizontal-scrolling-menu';
 import 'react-horizontal-scrolling-menu/dist/styles.css';
+import NotificationPanel from '../NotificationsPage/NotificationsPage';
 
 function ProfilePage() {
     const { username } = useParams();
@@ -49,6 +50,7 @@ function ProfilePage() {
     });
     const [isFriend, setIsFriend] = useState(false);
     const [requestSent, setRequestSent] = useState(false);
+    const [incomingRequest, setIncomingRequest] = useState(false);
     const [userInfoId, setUserInfoId] = useState(null);
     const [friendCount, setFriendCount] = useState(0);
     const [viewTab, setViewTab] = useState('cookbooks');
@@ -58,6 +60,7 @@ function ProfilePage() {
     const [loadingFriends, setLoadingFriends] = useState(true);
     const [recipesLoaded, setRecipesLoaded] = useState(false);
     const [cookbooksLoaded, setCookbooksLoaded] = useState(false);
+    const [showNotifications, setShowNotifications] = useState(false);
 
     useEffect(() => {
       const token = localStorage.getItem('token');
@@ -127,15 +130,21 @@ function ProfilePage() {
         if (profileUserInfoId === currentUserInfoId) return;
     
         try {
-          const [requestsRes, friendsRes] = await Promise.all([
+          const [outgoingRes, friendsRes, incomingRes] = await Promise.all([
             axios.get(`/api/friend-requests/${profileUserInfoId}`),
-            axios.get(`/api/friends/${currentUserInfoId}`)
+            axios.get(`/api/friends/${currentUserInfoId}`),
+            axios.get(`/api/friend-requests/${currentUserInfoId}`)
           ]);
-    
-          setRequestSent(requestsRes.data.some(req => req._id === currentUserInfoId));
-          setIsFriend(friendsRes.data.some(
-            friend => friend.userInfo?.toString() === profileUserInfoId?.toString()
-          ));
+          
+          setRequestSent(
+            outgoingRes.data.some(req => req._id === currentUserInfoId)
+          );
+          setIncomingRequest(
+            incomingRes.data.some(req => req._id === profileUserInfoId)
+          );
+          setIsFriend(
+            friendsRes.data.some(f => f.userInfo?.toString() === profileUserInfoId)
+          );          
         } catch (err) {
           console.warn('Failed to check friend status');
         }
@@ -197,6 +206,12 @@ function ProfilePage() {
           alert('Failed to send friend request.');
         }
     };
+
+    useEffect(() => {
+      const openHandler = () => setShowNotifications(true);
+      window.addEventListener('openNotificationsPanel', openHandler);
+      return () => window.removeEventListener('openNotificationsPanel', openHandler);
+    }, []);
 
     const renderScrollItem = (item, isCookbook) => (
       <div
@@ -279,8 +294,11 @@ function ProfilePage() {
           ▶
         </button>
       );
-    };    
+    };  
 
+    const openNotifications = () =>
+      window.dispatchEvent(new CustomEvent('openNotificationsPanel'));
+      
     if (error) {
       return <p>{error}</p>;
     }
@@ -367,7 +385,7 @@ function ProfilePage() {
                 {editMode ? (
                   <>
                   <div className="flex items-center gap-2 mb-1">
-                    <img src="/logo.png" alt="Logo" className="w-5 h-5" />
+                    <img src="/whiskaway.png" alt="Logo" className="w-5 h-5" />
                     <span className="text-gray-600 text-sm">{userData?.username}</span>
                   </div>
                   <div className="flex gap-2 mb-1 pt-2">
@@ -431,7 +449,7 @@ function ProfilePage() {
                       </h2>
                     )}
                     <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
-                      <img src="/logo.png" alt="Logo" className="w-5 h-5 object-contain" />
+                      <img src="/whiskaway.png" alt="Logo" className="w-5 h-5 object-contain" />
                       {userData?.username}
                     </div>
                     {!userData ? (
@@ -461,15 +479,48 @@ function ProfilePage() {
                     )}
                     </p>
                     <div className="flex gap-3 mt-3">
-                      <button onClick={copyProfileLink} className="bg-teal-500 hover:bg-teal-600 rounded-full px-4 py-2 font-semibold">Share</button>
+                      <button
+                        onClick={copyProfileLink}
+                        className="bg-teal-500 hover:bg-teal-600 rounded-full px-4 py-2 font-semibold"
+                      >
+                        Share
+                      </button>
+
                       {currentUser === userData?.username ? (
-                        <button onClick={handleEditToggle} className="bg-gray-200 hover:bg-gray-300 rounded-full px-4 py-2 font-semibold">Edit Profile</button>
+                        <button
+                          onClick={handleEditToggle}
+                          className="bg-gray-200 hover:bg-gray-300 rounded-full px-4 py-2 font-semibold"
+                        >
+                          Edit Profile
+                        </button>
                       ) : isFriend ? (
-                        <button disabled className="bg-gray-300 rounded-full px-4 py-2 font-semibold cursor-default">Friends ✓</button>
+                        <button
+                          disabled
+                          className="bg-gray-300 rounded-full px-4 py-2 font-semibold cursor-default"
+                        >
+                          Friends ✓
+                        </button>
+                      ) : incomingRequest ? (
+                        <button
+                          onClick={openNotifications}
+                          className="bg-green-200 hover:bg-green-300 rounded-full px-4 py-2 font-semibold"
+                        >
+                          Accept Request
+                        </button>
                       ) : requestSent ? (
-                        <button disabled className="bg-yellow-200 rounded-full px-4 py-2 font-semibold cursor-default">Request Sent ✓</button>
+                        <button
+                          disabled
+                          className="bg-yellow-200 rounded-full px-4 py-2 font-semibold cursor-default"
+                        >
+                          Request Sent ✓
+                        </button>
                       ) : (
-                        <button onClick={sendFriendRequest} className="bg-green-200 hover:bg-green-300 rounded-full px-4 py-2 font-semibold">Add Friend +</button>
+                        <button
+                          onClick={sendFriendRequest}
+                          className="bg-green-200 hover:bg-green-300 rounded-full px-4 py-2 font-semibold"
+                        >
+                          Add Friend +
+                        </button>
                       )}
                     </div>
                   </>

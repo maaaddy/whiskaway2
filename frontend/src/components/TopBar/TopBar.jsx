@@ -4,6 +4,8 @@ import { Link, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch, faBell, faCog, faSignOutAlt } from "@fortawesome/free-solid-svg-icons";
 import axios from 'axios';
+import NotificationPanel from "../NotificationsPage/NotificationsPage";
+import { useNotifications } from "../useNotifications";
 
 export let refreshFriendRequests = () => {};
 
@@ -112,6 +114,10 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
     const [selectedIntolerance, setSelectedIntolerance] = useState([]);
     const [loggedInUsername, setLoggedInUsername] = useState(null);
 
+    const [userInfoId, setUserInfoId] = useState(null);
+    const { unreadCount } = useNotifications(userInfoId);
+    const [showNotifications, setShowNotifications] = useState(false);
+
     const [requestCount, setRequestCount] = useState(0);
 
     useEffect(() => {
@@ -119,6 +125,7 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
             try {
                 const response = await axios.get("/api/profile");
                 setLoggedInUsername(response.data.username);
+                setUserInfoId(response.data.userInfo);
             } catch (error) {
                 console.error("Error fetching logged-in user:", error);
             }
@@ -175,6 +182,12 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, []);
+
+    useEffect(() => {
+        const handleOpen = () => setShowNotifications(true);
+        window.addEventListener('openNotificationsPanel', handleOpen);
+        return () => window.removeEventListener('openNotificationsPanel', handleOpen);
+      }, []);      
 
     return (
         <div className="fixed w-full bg-white backdrop-blur-md shadow-sm py-1 px-6 flex items-center justify-between z-50">
@@ -255,7 +268,7 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
                                         setUserSearchQuery("");
                                     }}
                                 >
-                                    <img src="/logo.png" alt="Logo" className="w-6 h-6 object-contain" />
+                                    <img src="/whiskaway.png" alt="Logo" className="w-6 h-6 object-contain" />
                                     <span>{user.username}</span>
                                 </li>
                             ))}
@@ -281,14 +294,25 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
                 <Link to="/about" className="hover:text-gray-700 transition">
                     <FontAwesomeIcon icon={faCog} size="lg" />
                 </Link>
-                <Link to="/notifications" className="relative hover:text-yellow-600 transition">
-                <FontAwesomeIcon icon={faBell} size="lg" />
-                    {requestCount > 0 && (
-                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center z-50">
-                            {requestCount}
-                        </span>
+                <div className="relative">
+                <button
+                    onClick={() => setShowNotifications(prev => !prev)}
+                    className="relative hover:text-yellow-600 transition"
+                >
+                    <FontAwesomeIcon icon={faBell} size="lg" />
+                    {unreadCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center z-50">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
                     )}
-                </Link>
+                </button>
+
+                <NotificationPanel
+                    userInfoId={userInfoId}
+                    show={showNotifications}
+                    onClose={() => setShowNotifications(false)}
+                />
+                </div>
                 <Link to="/settings" className="hover:text-gray-700 transition">
                     <FontAwesomeIcon icon={faCog} size="lg" />
                 </Link>

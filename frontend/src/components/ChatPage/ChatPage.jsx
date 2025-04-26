@@ -39,25 +39,27 @@ function ChatPage({ closeChat, initialUserId }) {
   const [search, setSearch] = useState('');
   const [showNewMessage, setShowNewMessage] = useState(false);
   const scrollRef = useRef(null);
+  const chatRef = useRef(null);
 
   const messagedFriends = friends.filter(f => f.latestMessage);
   const unmessagedFriends = friends.filter(f => !f.latestMessage);
 
+  const fetchFriends = async () => {
+    setLoadingFriends(true);
+    try {
+      const profileRes = await axios.get('/api/profile');
+      const fetchedUserInfoId = profileRes.data.userInfo;
+      setUserInfoId(fetchedUserInfoId);
+      const friendsRes = await axios.get(`/api/friends/${fetchedUserInfoId}`);
+      setFriends(friendsRes.data);
+    } catch (err) {
+      console.error("Failed to load friends:", err);
+    } finally {
+      setLoadingFriends(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchFriends = async () => {
-      setLoadingFriends(true);
-      try {
-        const profileRes = await axios.get('/api/profile');
-        const fetchedUserInfoId = profileRes.data.userInfo;
-        setUserInfoId(fetchedUserInfoId);
-        const friendsRes = await axios.get(`/api/friends/${fetchedUserInfoId}`);
-        setFriends(friendsRes.data);
-      } catch (err) {
-        console.error("Failed to load friends:", err);
-      } finally {
-        setLoadingFriends(false);
-      }
-    };
     fetchFriends();
   }, []);
 
@@ -95,6 +97,17 @@ function ChatPage({ closeChat, initialUserId }) {
     }
   }, [messages, loadingMessages]);
 
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (chatRef.current && !chatRef.current.contains(e.target)) {
+        setSelectedUser(null);
+        closeChat();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const sendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
@@ -103,6 +116,7 @@ function ChatPage({ closeChat, initialUserId }) {
       const res = await axios.post('/api/messages', { recipient, text: newMessage });
       setMessages(prev => [...prev, res.data]);
       setNewMessage('');
+      await fetchFriends();
     } catch (err) {
       console.error("Error sending message:", err.response?.data || err.message);
     }
@@ -117,7 +131,10 @@ function ChatPage({ closeChat, initialUserId }) {
     });
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-80 h-[60vh] bg-white rounded-lg shadow-md overflow-hidden border flex flex-col">
+    <div
+      ref={chatRef}
+      className="fixed bottom-4 right-4 z-50 w-80 h-[60vh] bg-white rounded-lg shadow-md overflow-hidden border flex flex-col"
+    >
       {!selectedUser ? (
         <>
           <div className="pt-3 px-4 flex items-center justify-between">
@@ -187,7 +204,10 @@ function ChatPage({ closeChat, initialUserId }) {
         <>
           <div className="p-3 border-b bg-white shadow-sm flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <button onClick={() => setSelectedUser(null)}>
+              <button onClick={() => {
+                setSelectedUser(null);
+                fetchFriends();
+              }}>
                 <FontAwesomeIcon icon={faAngleLeft} size="lg" className="text-teal-600" />
               </button>
               <img

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faPaperPlane, faBlender, faListOl, faSeedling, faBookMedical, faComment, faAngleDown, faAngleUp } from "@fortawesome/free-solid-svg-icons";
@@ -214,34 +215,35 @@ function RecipeDetailPage() {
                 <div className="flex-1 border-r-2 border-gray-200">
                     <h1 className="text-4xl font-bold text-gray-900 mb-1 mr-1">{recipe.title}</h1>
                     <p className="text-sm text-gray-600">
-                    {recipe.servings && <>Serves {recipe.servings} • </>}
+                        {recipe.servings && <>Serves {recipe.servings} • </>}
 
-                    {recipe.readyInMinutes !== undefined ? (
-                        (() => {
-                        const hours = Math.floor(recipe.readyInMinutes / 60);
-                        const minutes = recipe.readyInMinutes % 60;
+                        {recipe.readyInMinutes !== undefined ? (
+                            (() => {
+                            const hours = Math.floor(recipe.readyInMinutes / 60);
+                            const minutes = recipe.readyInMinutes % 60;
+                            return <>Ready in {hours > 0 && `${hours}h `}{minutes}m</>;
+                            })()
+                        ) : recipe.prepTime || recipe.cookTime ? (
+                            (() => {
+                            const totalTime = recipe.prepTime + recipe.cookTime;
+                            const hours = Math.floor(totalTime / 60);
+                            const minutes = totalTime % 60;
+                            return <>Ready in {hours > 0 && `${hours}h `}{minutes}m</>;
+                            })()
+                        ) : (
+                            <>No time info available</>
+                        )}
 
-                        return (
-                            <>
-                            Ready in {hours > 0 && `${hours}h `}{minutes}m
+                        {recipe.owner?.username && (
+                            <> • Author:{' '}
+                            <Link
+                                to={`/profile/${recipe.owner.username}`}
+                                className="text-teal-500 hover:underline"
+                            >
+                                {recipe.owner.username}
+                            </Link>
                             </>
-                        );
-                        })()
-                    ) : recipe.prepTime || recipe.cookTime ? (
-                        (() => {
-                        const totalTime = recipe.prepTime + recipe.cookTime;
-                        const hours = Math.floor(totalTime / 60);
-                        const minutes = totalTime % 60;
-
-                        return (
-                            <>
-                            Ready in {hours > 0 && `${hours}h `}{minutes}m
-                            </>
-                        );
-                        })()
-                    ) : (
-                        <>No time info available</>
-                    )}
+                        )}
                     </p>
                 </div>
                 <div className="relative flex gap-2 items-center sm:self-start">

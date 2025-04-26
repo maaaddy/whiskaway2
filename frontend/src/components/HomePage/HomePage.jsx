@@ -130,36 +130,36 @@ function HomePage({ searchQuery, recipeFilter }) {
   const skeletonCount = DISPLAY_COUNT;
 
   return (
-    <div className="homepage back">
+    <div className="homepage py-16">
       <div className="recipe-list grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {initialLoading
           ? Array.from({ length: skeletonCount }).map((_, i) => <SkeletonCard key={i} delay={i * 100} />)
           : displayedRecipes.length > 0
             ? displayedRecipes.map(r => (
-                <div key={r.id || r._id} className="hovering group">
-                  <div className="recipe-card">
-                    <Link to={`/recipe/${r.id || r._id}`}>  
-                      <div className="relative">
-                        <img 
-                            src={
-                                r.image
-                                ? (r.image.startsWith('http')
-                                    ? r.image
-                                    : `data:image/jpeg;base64,${r.image}`)
-                                : ''
-                            }
-                            alt={r.title} 
-                            className="w-full h-48 object-cover rounded-2xl" 
-                        />
-                        <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-25 transition-opacity rounded-2xl" />
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <h3 className="text-white text-lg font-semibold text-center px-2">{r.title}</h3>
-                        </div>
+              <div key={r.id || r._id} className="hovering group">
+                <div className="recipe-card">
+                  <Link to={`/recipe/${r.id || r._id}`}>
+                    <div className="relative">
+                      <img
+                        src={
+                          r.image
+                            ? (r.image.startsWith('http')
+                              ? r.image
+                              : `data:image/jpeg;base64,${r.image}`)
+                            : ''
+                        }
+                        alt={r.title}
+                        className="w-full h-48 object-cover rounded-2xl"
+                      />
+                      <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-25 transition-opacity rounded-2xl" />
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <h3 className="text-white text-lg font-semibold text-center px-2">{r.title}</h3>
                       </div>
-                    </Link>
-                  </div>
+                    </div>
+                  </Link>
                 </div>
-              ))
+              </div>
+            ))
             : <p>No recipes found. Try adjusting your search or filters!</p>
         }
       </div>
