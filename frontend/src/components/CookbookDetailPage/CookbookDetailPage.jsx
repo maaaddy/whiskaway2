@@ -3,6 +3,7 @@ import axios from 'axios';
 import axiosRateLimit from 'axios-rate-limit';
 import { useParams, Link } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
+import InviteModal from '../InviteModal/InviteModal';
 
 const axiosInstance = axiosRateLimit(axios.create(), { maxRequests: 5, perMilliseconds: 1000 });
 
@@ -12,74 +13,84 @@ function CookbookDetailPage() {
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
+  const [currentUsername, setCurrentUsername] = useState('');
+  const [inviteMode, setInviteMode] = useState(false);
   const API_KEY = process.env.REACT_APP_API_KEY;
 
   useEffect(() => {
     const fetchCookbook = async () => {
+      const profileRes = await axios.get('/api/profile');
+      setCurrentUsername(profileRes.data.username);
+  
       const cached = localStorage.getItem(`cookbook_${id}`);
-
       if (cached) {
         const { timestamp, cookbook, recipes } = JSON.parse(cached);
         const isFresh = Date.now() - timestamp < 1000 * 60 * 10;
         if (isFresh) {
+          setIsOwner(
+            cookbook.owners
+              .map(o => o.toString())
+              .includes(profileRes.data.userId)
+          );
           setCookbook(cookbook);
           setRecipes(recipes);
           setLoading(false);
           return;
         }
       }
+  
       try {
         const response = await axios.get(`/api/cookbook/${id}`);
         setCookbook(response.data);
-
-        const profileRes = await axios.get('/api/profile');
-        setIsOwner(response.data.owner?.toString() === profileRes.data.userId?.toString());
-
+        setIsOwner(
+          response.data.owners
+            .map(o => o.toString())
+            .includes(profileRes.data.userId)
+        );
+        setCurrentUsername(profileRes.data.username);
+  
         const allRecipes = await Promise.all(
-          response.data.recipes.map(async (recipeId) => {
+          response.data.recipes.map(async recipeId => {
             const isUserRecipe = /^[a-f\d]{24}$/i.test(recipeId);
-                      
             if (isUserRecipe) {
               try {
                 const res = await axios.get(`/api/recipes/${recipeId}`);
-                return {
-                  ...res.data,
-                  id: recipeId,
-                  isUser: true,
-                };
-              } catch (err) {
-                console.error("Failed to load user recipe", err);
+                return { ...res.data, id: recipeId, isUser: true };
+              } catch {
                 return null;
               }
             } else {
               try {
-                const res = await axiosInstance.get(`https://api.spoonacular.com/recipes/${recipeId}/information?apiKey=${API_KEY}`);
+                const res = await axiosInstance.get(
+                  `https://api.spoonacular.com/recipes/${recipeId}/information?apiKey=${API_KEY}`
+                );
                 return res.data;
-                } catch (err) {
-                  console.error("Failed to load API recipe", err);
-                  return null;
-                }
+              } catch {
+                return null;
+              }
             }
           })
-        );                  
-
+        );
         const cleanRecipes = allRecipes.filter(Boolean);
-        setRecipes(cleanRecipes.filter(Boolean));
-
-        localStorage.setItem(`cookbook_${id}`, JSON.stringify({
-          timestamp: Date.now(),
-          cookbook: response.data,
-          recipes: cleanRecipes,
-        }));
-
+        setRecipes(cleanRecipes);
+  
+        localStorage.setItem(
+          `cookbook_${id}`,
+          JSON.stringify({
+            timestamp: Date.now(),
+            cookbook: response.data,
+            recipes: cleanRecipes,
+          })
+        );
       } catch (err) {
-        console.error("Error fetching cookbook:", err);
+        console.error('Error fetching cookbook:', err);
       } finally {
         setLoading(false);
       }
     };
+  
     fetchCookbook();
-  }, [id, API_KEY]);
+  }, [id, API_KEY]);  
 
   const handleRemoveRecipe = async (idToRemove) => {
     const confirmed = window.confirm('Are you sure you want to remove this recipe?');
@@ -99,17 +110,35 @@ function CookbookDetailPage() {
     <div className="back max-w-6xl mx-auto p-6 pb-20">
       <Toaster position='top-right' />
       {loading ? (
-        <p className="text-center text-lg text-gray-600 mt-20">Loading your cookbook...</p>
+        <p className="text-center text-lg text-gray-600 mt-20">Loading cookbook...</p>
         ) : (
         <>
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">{cookbook.title}</h1>
-          <p className="text-gray-500 text-lg">{recipes.length} Recipes</p>
+          <h1 className="text-4xl font-semibold text-teal-900 mb-2">{cookbook.title}</h1>
+          <p className="text-gray-500 text-sm">
+            {recipes.length} {recipes.length === 1 ? 'Recipe' : 'Recipes'}
+          </p>
         </div>
+        {isOwner && (
+          <button
+            className="mt-4 bg-teal-500 text-white px-4 py-2 rounded"
+            onClick={() => setInviteMode(true)}
+          >
+            + Invite collaborator
+          </button>
+        )}
+        {isOwner && inviteMode && (
+          <InviteModal
+            cookbookId={id}
+            currentUsername={currentUsername}
+            onClose={() => setInviteMode(false)}
+            onInviteSuccess={() => { toast.success('Invite sent!'); setInviteMode(false); }}
+          />
+        )}
         {cookbook.recipes.length === 0 ? (
           <div className="text-center mt-8">
           <p className="text-gray-600 text-lg mb-2">This cookbook doesn't have any recipes yet.</p>
-          <Link to="/" className="text-blue-600 hover:text-blue-800 underline">
+          <Link to="/" className="text-teal-600 hover:text-teal-700 underline">
             Browse Recipes
           </Link>
           </div>

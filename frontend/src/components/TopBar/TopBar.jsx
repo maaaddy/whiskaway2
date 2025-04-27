@@ -191,10 +191,12 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
 
     return (
         <div className="fixed w-full bg-white backdrop-blur-md shadow-sm py-1 px-6 flex items-center justify-between z-50">
-            <div className="flex items-center space-x-3">
+            <Link to="/" className="flex items-center space-x-3">
                 <img src="/whiskaway.png" alt="Logo" className="w-9 h-auto" />
-                <span className="text-xl text-teal-700 font-semibold font-serif">WhiskAway</span>
-            </div>
+                <span className="text-xl text-teal-700 font-semibold font-serif">
+                    WhiskAway
+                </span>
+            </Link>
 
             {showSearchBar && (
                 <div className="search-container" ref={filterRef}>

@@ -3,7 +3,9 @@ const mongoose = require('mongoose');
 const NotificationSchema = new mongoose.Schema({
     type: { 
         type: String, 
-        enum: ['friend_request', 'friend_accept', 'recipe_like', 'recipe_comment'], 
+        enum: [
+            'friend_request','friend_accept','recipe_like','recipe_comment','cookbook_share_request','cookbook_share_accept'
+        ], 
         required: true 
     },
     fromUser: { 
