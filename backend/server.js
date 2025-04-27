@@ -37,6 +37,10 @@ app.use(cors({
 }));
 app.use(cookieParser());
 
+const useApiPrefix = true; //true for dev false for server
+const apiMount = useApiPrefix ? '/api' : '/';
+const app2 = express.Router();
+
 const PORT = 5000;
 // End Set Up -----------------------------------------------------------
 async function createNotification(type, fromUser, toUser, data = {}) {
@@ -47,12 +51,12 @@ async function createNotification(type, fromUser, toUser, data = {}) {
   }
 }
 
-app.get('/api/test', (_req, res) => {
+app2.get('/test', (_req, res) => {
   res.json('Test successful.');
 });
 
 // Login/User Stuff ---------------------------------------------------------
-app.post('/api/register', async (req, res) => {
+app2.post('/register', async (req, res) => {
   try {
     const { username, password, fName, lName, bio, intolerances } = req.body;
     if (!username) {
@@ -101,7 +105,7 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-app.post('/api/login', async (req, res) => {
+app2.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
     const user = await User.findOne({ username }).populate('userInfo');
@@ -129,12 +133,12 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-app.post('/api/logout', (req, res) => {
+app2.post('/logout', (req, res) => {
   res.clearCookie('token');
   res.json({ message: 'Logged out successfully' });
 });
 
-app.get('/api/profile/:username?', async (req, res) => {
+app2.get('/profile/:username?', async (req, res) => {
   const { token } = req.cookies;
   const { username } = req.params;
 
@@ -189,7 +193,7 @@ app.get('/api/profile/:username?', async (req, res) => {
   });
 });
 
-app.put('/api/profile/update', async (req, res) => {
+app2.put('/profile/update', async (req, res) => {
   const { token } = req.cookies;
   if (!token) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -231,7 +235,7 @@ app.put('/api/profile/update', async (req, res) => {
   });
 });
 
-app.get('/api/search/users', async (req, res) => {
+app2.get('/search/users', async (req, res) => {
   const { query, currentUser } = req.query;
 
   if (!query) {
@@ -252,7 +256,7 @@ app.get('/api/search/users', async (req, res) => {
 });
 
 // Friends ------------------------------------------------------
-app.post('/api/addFriend', async (req, res) => {
+app2.post('/addFriend', async (req, res) => {
   const { userId, friendId } = req.body;
 
   try {
@@ -271,7 +275,7 @@ app.post('/api/addFriend', async (req, res) => {
   }
 });
 
-app.put('/api/friends/remove', async (req, res) => {
+app2.put('/friends/remove', async (req, res) => {
   const { userId, friendId } = req.body;
 
   try {
@@ -295,7 +299,7 @@ app.put('/api/friends/remove', async (req, res) => {
   }
 });
 
-app.get('/api/friends/:userId', async (req, res) => {
+app2.get('/friends/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     const userInfo = await UserInfo.findById(userId).populate('friends');
@@ -336,7 +340,7 @@ app.get('/api/friends/:userId', async (req, res) => {
   }
 });
 
-app.post('/api/friend-request', async (req, res) => {
+app2.post('/friend-request', async (req, res) => {
   const { fromId, toId } = req.body;
 
   try {
@@ -358,7 +362,7 @@ app.post('/api/friend-request', async (req, res) => {
   }
 });
 
-app.get('/api/friend-requests/:userInfoId', async (req, res) => {
+app2.get('/friend-requests/:userInfoId', async (req, res) => {
   try {
     const userInfo = await UserInfo.findById(req.params.userInfoId).populate('friendRequests');
     if (!userInfo) return res.status(404).json({ error: 'User not found' });
@@ -383,7 +387,7 @@ app.get('/api/friend-requests/:userInfoId', async (req, res) => {
   }
 });
 
-app.post('/api/friend-request/accept', async (req, res) => {
+app2.post('/friend-request/accept', async (req, res) => {
   const { currentUserId, requesterId } = req.body;
 
   console.log("Accepting Friend Request:", currentUserId, "<-", requesterId);
@@ -419,7 +423,7 @@ app.post('/api/friend-request/accept', async (req, res) => {
   }
 });
 
-app.post('/api/friend-request/deny', async (req, res) => {
+app2.post('/friend-request/deny', async (req, res) => {
   const { currentUserId, requesterId } = req.body;
 
   console.log("Denying Friend Request:", currentUserId, "<-", requesterId);
@@ -461,7 +465,7 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-app.post('/api/cookbook', verifyToken, async (req, res) => {
+app2.post('/cookbook', verifyToken, async (req, res) => {
   const { title, isPublic, coverImage } = req.body;
   const userId = req.userId;
 
@@ -484,7 +488,7 @@ app.post('/api/cookbook', verifyToken, async (req, res) => {
   }
 });
 
-app.get('/api/cookbook', verifyToken, async (req, res) => {
+app2.get('/cookbook', verifyToken, async (req, res) => {
   const userId = req.userId;
 
   try {
@@ -496,7 +500,7 @@ app.get('/api/cookbook', verifyToken, async (req, res) => {
   }
 });
 
-app.get('/api/cookbook/:id', verifyToken, async (req, res) => {
+app2.get('/cookbook/:id', verifyToken, async (req, res) => {
   const cookbookId = req.params.id;
   const userId = req.userId;
 
@@ -534,7 +538,7 @@ app.get('/api/cookbook/:id', verifyToken, async (req, res) => {
   }
 });
 
-app.put('/api/cookbook/:id', async (req, res) => {
+app2.put('/cookbook/:id', async (req, res) => {
   try {
       const { id } = req.params;
       const { isPublic } = req.body;
@@ -552,7 +556,7 @@ app.put('/api/cookbook/:id', async (req, res) => {
   }
 });
 
-app.post('/api/cookbook/:id/addRecipe', verifyToken, async (req, res) => {
+app2.post('/cookbook/:id/addRecipe', verifyToken, async (req, res) => {
   const { id } = req.params;
   const { recipeId } = req.body;
 
@@ -574,7 +578,7 @@ app.post('/api/cookbook/:id/addRecipe', verifyToken, async (req, res) => {
   }
 });
 
-app.delete('/api/cookbook/:id/removeRecipe/:recipeId', verifyToken, async (req, res) => {
+app2.delete('/cookbook/:id/removeRecipe/:recipeId', verifyToken, async (req, res) => {
   const { id, recipeId } = req.params;
   const userId = req.userId;
 
@@ -595,7 +599,7 @@ app.delete('/api/cookbook/:id/removeRecipe/:recipeId', verifyToken, async (req, 
   }
 });
 
-app.get('/api/cookbooks/user/:username', verifyToken, async (req, res) => {
+app2.get('/cookbooks/user/:username', verifyToken, async (req, res) => {
   const username = req.params.username;
   const requesterId = req.userId;
 
@@ -620,7 +624,7 @@ app.get('/api/cookbooks/user/:username', verifyToken, async (req, res) => {
   }
 });
 
-app.delete('/api/cookbook/:id', verifyToken, async (req, res) => {
+app2.delete('/cookbook/:id', verifyToken, async (req, res) => {
   const cookbookId = req.params.id;
   const userId = req.userId;
 
@@ -639,7 +643,7 @@ app.delete('/api/cookbook/:id', verifyToken, async (req, res) => {
 });
 
 // Multiple owner stuff... ---------------------------------
-app.post('/api/cookbook/:id/share', verifyToken, async (req, res) => {
+app2.post('/cookbook/:id/share', verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { toUserId } = req.body;
@@ -684,7 +688,7 @@ app.post('/api/cookbook/:id/share', verifyToken, async (req, res) => {
   }
 });
 
-app.post('/api/cookbook/:id/share/accept', verifyToken, async (req, res) => {
+app2.post('/cookbook/:id/share/accept', verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
     const cookbook = await Cookbook.findById(id);
@@ -721,7 +725,7 @@ app.post('/api/cookbook/:id/share/accept', verifyToken, async (req, res) => {
   }
 });
 
-app.post('/api/cookbook/:id/share/deny', verifyToken, async (req, res) => {
+app2.post('/cookbook/:id/share/deny', verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
     const cookbook = await Cookbook.findById(id);
@@ -744,7 +748,7 @@ app.post('/api/cookbook/:id/share/deny', verifyToken, async (req, res) => {
 const storage = multer.memoryStorage();
 const upload = multer({ storage: multer.memoryStorage() });
 
-app.post('/api/upload', upload.fields([
+app2.post('/upload', upload.fields([
   { name: 'profilePic', maxCount: 1 },
   { name: 'coverImage', maxCount: 1 }
 ]), async (req, res) => {
@@ -775,7 +779,7 @@ app.post('/api/upload', upload.fields([
   }
 });
 
-app.get('/api/profilePic/:userId', async (req, res) => {
+app2.get('/profilePic/:userId', async (req, res) => {
   try {
       const userInfo = await UserInfo.findById(req.params.userId);
       if (!userInfo || !userInfo.profilePic) {
@@ -790,7 +794,7 @@ app.get('/api/profilePic/:userId', async (req, res) => {
   }
 });
 
-app.get('/api/coverImage/:userId', async (req, res) => {
+app2.get('/coverImage/:userId', async (req, res) => {
   try {
     const userInfo = await UserInfo.findById(req.params.userId);
     if (!userInfo || !userInfo.coverImage) {
@@ -806,7 +810,7 @@ app.get('/api/coverImage/:userId', async (req, res) => {
 });
 
 // Attempt at chat part! -----------------------------------------
-app.get('/api/messages/:id', verifyToken, async (req, res) => {
+app2.get('/messages/:id', verifyToken, async (req, res) => {
   const userId = req.userId;
   const otherUserInfoId = req.params.id;
 
@@ -832,7 +836,7 @@ app.get('/api/messages/:id', verifyToken, async (req, res) => {
   }
 });
 
-app.post('/api/messages', verifyToken, async (req, res) => {
+app2.post('/messages', verifyToken, async (req, res) => {
   const userId = req.userId;
   const { recipient, text } = req.body;
 
@@ -857,7 +861,7 @@ app.post('/api/messages', verifyToken, async (req, res) => {
 });
 
 // User-submitted recipe time lol---------------------------------------
-app.post('/api/recipes', verifyToken, async (req, res) => {
+app2.post('/recipes', verifyToken, async (req, res) => {
   try {
     const {
       title,
@@ -911,7 +915,7 @@ app.post('/api/recipes', verifyToken, async (req, res) => {
   }
 });
 
-app.get('/api/my-recipes', verifyToken, async (req, res) => {
+app2.get('/my-recipes', verifyToken, async (req, res) => {
   try {
     const recipes = await Recipe.find({ owner: req.userId }).sort({ index: 1 });
 
@@ -933,7 +937,7 @@ app.get('/api/my-recipes', verifyToken, async (req, res) => {
   }
 });
 
-app.get('/api/public-recipes', async (req, res) => {
+app2.get('/public-recipes', async (req, res) => {
   try {
     const publicRecipes = await Recipe.find({ isPublic: true })
       .sort({ createdAt: -1 })
@@ -951,7 +955,7 @@ app.get('/api/public-recipes', async (req, res) => {
   }
 });
 
-app.get('/api/recipes/user/:username', async (req, res) => {
+app2.get('/recipes/user/:username', async (req, res) => {
   try {
     const { username } = req.params;
     const user = await User.findOne({ username });
@@ -982,7 +986,7 @@ app.get('/api/recipes/user/:username', async (req, res) => {
   }
 });
 
-app.get('/api/recipes/:id', verifyToken, async (req, res) => {
+app2.get('/recipes/:id', verifyToken, async (req, res) => {
   try {
     const recipe = await Recipe
       .findById(req.params.id)
@@ -1011,7 +1015,7 @@ app.get('/api/recipes/:id', verifyToken, async (req, res) => {
   }
 });
 
-app.put('/api/recipes/:id', verifyToken, async (req, res) => {
+app2.put('/recipes/:id', verifyToken, async (req, res) => {
   const { isPublic } = req.body;
   try {
     const updated = await Recipe.findByIdAndUpdate(req.params.id, { isPublic }, { new: true });
@@ -1022,7 +1026,7 @@ app.put('/api/recipes/:id', verifyToken, async (req, res) => {
   }
 });
 
-app.delete('/api/recipes/:id', verifyToken, async (req, res) => {
+app2.delete('/recipes/:id', verifyToken, async (req, res) => {
   try {
     await Recipe.findByIdAndDelete(req.params.id);
     res.status(200).json({ message: 'Recipe deleted' });
@@ -1033,7 +1037,7 @@ app.delete('/api/recipes/:id', verifyToken, async (req, res) => {
 });
 
 //Commenting on user recipes.
-app.post('/api/recipes/:id/comments', verifyToken, async (req, res) => {
+app2.post('/recipes/:id/comments', verifyToken, async (req, res) => {
   const { text } = req.body;
   const { id } = req.params;
 
@@ -1069,7 +1073,7 @@ app.post('/api/recipes/:id/comments', verifyToken, async (req, res) => {
   }
 });
 
-app.get('/api/recipes/:id/comments', async (req, res) => {
+app2.get('/recipes/:id/comments', async (req, res) => {
   try {
     const comments = await Comment.find({ recipeId: req.params.id }).sort({ createdAt: -1 });
     res.json(comments);
@@ -1079,7 +1083,7 @@ app.get('/api/recipes/:id/comments', async (req, res) => {
   }
 });
 
-app.get('/api/recipes/:id/comments/count', async (req, res) => {
+app2.get('/recipes/:id/comments/count', async (req, res) => {
   try {
     const count = await Comment.countDocuments({ recipeId: req.params.id });
     res.json({ count });
@@ -1090,7 +1094,7 @@ app.get('/api/recipes/:id/comments/count', async (req, res) => {
 });
 
 //Liking recipe time
-app.post('/api/recipes/:id/like', verifyToken, async (req, res) => {
+app2.post('/recipes/:id/like', verifyToken, async (req, res) => {
   const recipeId = req.params.id;
 
   try {
@@ -1131,7 +1135,7 @@ app.post('/api/recipes/:id/like', verifyToken, async (req, res) => {
   }
 });
 
-app.get('/api/recipes/:id/likes', verifyToken, async (req, res) => {
+app2.get('/recipes/:id/likes', verifyToken, async (req, res) => {
   const recipeId = req.params.id;
   const userId = req.userId;
 
@@ -1146,7 +1150,7 @@ app.get('/api/recipes/:id/likes', verifyToken, async (req, res) => {
 });
 
 //settings page start
-app.put('/api/settings/username', verifyToken, async (req, res) => {
+app2.put('/settings/username', verifyToken, async (req, res) => {
   const { currentPassword, newUsername } = req.body;
 
   try {
@@ -1168,7 +1172,7 @@ app.put('/api/settings/username', verifyToken, async (req, res) => {
   }
 });
 
-app.put('/api/settings/password', verifyToken, async (req, res) => {
+app2.put('/settings/password', verifyToken, async (req, res) => {
   const { currentPassword, newPassword } = req.body;
 
   try {
@@ -1189,7 +1193,7 @@ app.put('/api/settings/password', verifyToken, async (req, res) => {
   }
 });
 
-app.put('/api/settings/intolerances', verifyToken, async (req, res) => {
+app2.put('/settings/intolerances', verifyToken, async (req, res) => {
   const { intolerances } = req.body;
   try {
     const user = await User.findById(req.userId).populate('userInfo');
@@ -1205,7 +1209,7 @@ app.put('/api/settings/intolerances', verifyToken, async (req, res) => {
   }
 });
 
-app.get('/api/admin/users', async (req, res) => {
+app2.get('/admin/users', async (req, res) => {
   try {
     const { query, from, to } = req.query;
     const filter = {};
@@ -1222,7 +1226,7 @@ app.get('/api/admin/users', async (req, res) => {
   }
 });
 
-app.delete('/api/admin/users/:userId', async (req, res) => {
+app2.delete('/admin/users/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     await User.findByIdAndDelete(userId);
@@ -1239,7 +1243,7 @@ function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-app.get('/api/admin/top-commented', async (req, res) => {
+app2.get('/admin/top-commented', async (req, res) => {
   try {
     const top = await Comment.aggregate([
       { $group: { _id: '$recipeId', commentCount: { $sum: 1 } } },
@@ -1303,7 +1307,7 @@ app.get('/api/admin/top-commented', async (req, res) => {
   }
 });
 
-app.get('/api/admin/top-liked', async (req, res) => {
+app2.get('/admin/top-liked', async (req, res) => {
   try {
     const top = await Like.aggregate([
       { $group: { _id: '$recipeId', likeCount: { $sum: 1 } } },
@@ -1359,7 +1363,7 @@ app.get('/api/admin/top-liked', async (req, res) => {
   }
 });
 
-app.get('/api/admin/spoonacular-popular', async (req, res) => {
+app2.get('/admin/spoonacular-popular', async (req, res) => {
   try {
     const { data } = await axios.get(
       `https://api.spoonacular.com/recipes/complexSearch`,
@@ -1384,7 +1388,7 @@ app.get('/api/admin/spoonacular-popular', async (req, res) => {
 });
 
 //More realistic notification system time lol
-app.post('/api/notifications', async (req, res) => {
+app2.post('/notifications', async (req, res) => {
   try {
     const { type, fromUser, toUser, data } = req.body;
     const notif = await Notification.create({ type, fromUser, toUser, data });
@@ -1395,7 +1399,7 @@ app.post('/api/notifications', async (req, res) => {
   }
 });
 
-app.get('/api/notifications/:userInfoId', async (req, res) => {
+app2.get('/notifications/:userInfoId', async (req, res) => {
   try {
     const notifs = await Notification
       .find({ toUser: req.params.userInfoId })
@@ -1421,7 +1425,7 @@ app.get('/api/notifications/:userInfoId', async (req, res) => {
   }
 });
 
-app.put('/api/notifications/:id/read', async (req, res) => {
+app2.put('/notifications/:id/read', async (req, res) => {
   try {
     const notif = await Notification.findByIdAndUpdate(req.params.id, { read: true }, { new: true });
     res.json(notif);
@@ -1432,4 +1436,5 @@ app.put('/api/notifications/:id/read', async (req, res) => {
 });
 
 // Port that we're listening on -----------------------------------------
+app.use(apiMount, app2);
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
