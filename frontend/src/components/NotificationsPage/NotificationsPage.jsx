@@ -7,6 +7,7 @@ import { formatDistanceToNow } from 'date-fns';
 export default function NotificationPanel({ userInfoId, show, onClose }) {
   const { notifications: fetchedNotifications, markAsRead, loading, fetchNotifications } = useNotifications(userInfoId);
   const [localNotifications, setLocalNotifications] = useState([]);
+  const [dismissedIds, setDismissedIds] = useState([]);
   const panelRef = useRef(null);
   const navigate = useNavigate();
 
@@ -22,7 +23,7 @@ export default function NotificationPanel({ userInfoId, show, onClose }) {
 
   const notifications = [...localNotifications, ...fetchedNotifications];
   const isInitialLoad = loading && notifications.length === 0;
-  const itemsToShow = notifications.filter(n => !n.read);
+  const itemsToShow = notifications.filter(n => !n.read && !dismissedIds.includes(n._id));
 
   const handleNavigate = async (notif) => {
     const { fromUser } = notif;
@@ -53,6 +54,12 @@ export default function NotificationPanel({ userInfoId, show, onClose }) {
         navigate(`/profile/${username}`);
         break;
       }
+      case 'cookbook_share_request':
+      case 'cookbook_share_accept': {
+        const cookbookId = notif.data.cookbookId;
+        navigate(`/cookbook/${cookbookId}`);
+        break;
+      }
       default:
         break;
     }
@@ -62,7 +69,7 @@ export default function NotificationPanel({ userInfoId, show, onClose }) {
     const unread = notifications.filter(n => !n.read);
     await Promise.all(unread.map(n => markAsRead(n._id)));
     setLocalNotifications([]);
-    await fetchNotifications();
+    fetchNotifications();
   };
 
   const handleFriendAction = async (notif, action) => {
@@ -74,8 +81,8 @@ export default function NotificationPanel({ userInfoId, show, onClose }) {
         currentUserId: userInfoId,
         requesterId: notif.fromUser._id,
       });
-      await markAsRead(notif._id);
-      await fetchNotifications();
+      markAsRead(notif._id);
+      fetchNotifications();
 
       if (action === 'accept') {
         const newNotif = {
@@ -89,6 +96,27 @@ export default function NotificationPanel({ userInfoId, show, onClose }) {
       }
     } catch (err) {
       console.error(`Failed to ${action} request:`, err);
+    }
+  };
+
+  const handleCookbookShare = async (notif, action) => {
+    const { cookbookId } = notif.data;
+    setDismissedIds(prev => [...prev, notif._id]);
+    try {
+      const endpoint =
+        action === 'accept'
+          ? `/api/cookbook/${cookbookId}/share/accept`
+          : `/api/cookbook/${cookbookId}/share/deny`;
+
+      const body = action === 'accept'
+        ? { inviterInfoId: notif.fromUser._id }
+        : {};
+
+      await axios.post(endpoint, body);
+      markAsRead(notif._id);
+    } catch (err) {
+      console.error(`Failed to ${action} share request:`, err);
+      setDismissedIds(prev => prev.filter(id => id !== notif._id));
     }
   };
 
@@ -119,6 +147,34 @@ export default function NotificationPanel({ userInfoId, show, onClose }) {
         return <p>{fromUser.fName} {fromUser.lName} liked your recipe.</p>;
       case 'recipe_comment':
         return <p>{fromUser.fName} {fromUser.lName} commented on your recipe.</p>;
+      case 'cookbook_share_request':
+        return (
+          <div className="rounded-xl">
+            <p>
+              {fromUser.fName} {fromUser.lName} invited you to collaborate on a cookbook.
+            </p>
+            <div className="flex gap-2 mt-2">
+              <button
+                className="bg-green-500 text-white px-2 py-1 text-xs rounded"
+                onClick={(e) => { e.stopPropagation(); handleCookbookShare(notif, 'accept'); }}
+              >
+                Accept
+              </button>
+              <button
+                className="bg-red-500 text-white px-2 py-1 text-xs rounded"
+                onClick={(e) => { e.stopPropagation(); handleCookbookShare(notif, 'deny'); }}
+              >
+                Deny
+              </button>
+            </div>
+          </div>
+        );
+      case 'cookbook_share_accept':
+        return (
+          <p>
+            {fromUser.fName} {fromUser.lName} is now a co-owner on your cookbook!
+          </p>
+        );        
       default:
         return <p>You have a new notification.</p>;
     }

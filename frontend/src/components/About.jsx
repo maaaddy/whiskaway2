@@ -50,6 +50,7 @@ function About() {
             <p>Need to create loading states for a lot of things...</p>
             <p>For example, loading messages, loading recieps, loading cookbooks, loading personal recipes,</p>
             <p>Instead of "Failed to add recipe" if it's already in a cookbook, maybe tell the user it's already in there.</p>
+            <p>Only show browse recipes prompt if its your own empty cookbook</p>
             <div className='pb-24'></div>
         </div>
     );

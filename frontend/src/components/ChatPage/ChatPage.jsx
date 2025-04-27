@@ -150,7 +150,7 @@ function ChatPage({ closeChat, initialUserId }) {
               </>
             ) : (
               <>
-                <span className="font-semibold">Messages</span>
+                <span className="font-semibold text-teal-900">Messages</span>
                 <div className="flex items-center gap-3">
                   <button onClick={() => setShowNewMessage(true)} className="text-teal-600">
                     <FontAwesomeIcon icon={faPenToSquare} size="md" />

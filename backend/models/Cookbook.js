@@ -5,11 +5,15 @@ const cookbookSchema = new mongoose.Schema({
     type: String, 
     required: true 
   },
-  owner: { 
+  owners: [{ 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User', 
     required: true 
-  },
+  }],
+  collaboratorRequests: [{ 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User' 
+  }],
   recipes: [{ 
     type: String 
   }],

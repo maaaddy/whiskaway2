@@ -462,7 +462,7 @@ const verifyToken = (req, res, next) => {
 };
 
 app.post('/api/cookbook', verifyToken, async (req, res) => {
-    const { title, isPublic, coverImage } = req.body;
+  const { title, isPublic, coverImage } = req.body;
   const userId = req.userId;
 
   if (!title) {
@@ -472,7 +472,7 @@ app.post('/api/cookbook', verifyToken, async (req, res) => {
   try {
     const newCookbook = new Cookbook({
       title,
-      owner: userId,
+      owners: [userId],
       isPublic: isPublic || false,
       coverImage: coverImage || 'cover5.JPG',
     });
@@ -488,7 +488,7 @@ app.get('/api/cookbook', verifyToken, async (req, res) => {
   const userId = req.userId;
 
   try {
-    const cookbooks = await Cookbook.find({ owner: userId });
+    const cookbooks = await Cookbook.find({ owners: userId });
     res.status(200).json(cookbooks);
   } catch (err) {
     console.error('Error fetching cookbooks:', err);
@@ -504,7 +504,7 @@ app.get('/api/cookbook/:id', verifyToken, async (req, res) => {
     const cookbook = await Cookbook.findOne({
       _id: cookbookId,
       $or: [
-        { owner: userId },
+        { owners: userId },
         { isPublic: true }
       ]
     }).populate('recipes');
@@ -513,9 +513,11 @@ app.get('/api/cookbook/:id', verifyToken, async (req, res) => {
       return res.status(404).json({ message: 'Cookbook not found or access denied' });
     }
 
-    const isOwner = cookbook.owner.toString() === userId;
-    const validRecipes = cookbook.recipes.filter(Boolean);
+    const isOwner = cookbook.owners
+      .map(o => o.toString())
+      .includes(userId);
 
+    const validRecipes = cookbook.recipes.filter(Boolean);
     const filteredRecipes = validRecipes.filter(recipe => {
       if (typeof recipe === 'string') return true;
       if (isOwner) return true;
@@ -555,7 +557,7 @@ app.post('/api/cookbook/:id/addRecipe', verifyToken, async (req, res) => {
   const { recipeId } = req.body;
 
   try {
-    const cookbook = await Cookbook.findOne({ _id: id, owner: req.userId });
+    const cookbook = await Cookbook.findOne({ _id: id, owners: req.userId });
     if (!cookbook) {
       return res.status(404).json({ error: 'Cookbook not found or not owned by you' });
     }
@@ -577,7 +579,7 @@ app.delete('/api/cookbook/:id/removeRecipe/:recipeId', verifyToken, async (req, 
   const userId = req.userId;
 
   try {
-    const cookbook = await Cookbook.findOne({ _id: id, owner: userId });
+    const cookbook = await Cookbook.findOne({ _id: id, owners: userId });
 
     if (!cookbook) {
       return res.status(404).json({ error: 'Cookbook not found or unauthorized' });
@@ -605,7 +607,7 @@ app.get('/api/cookbooks/user/:username', verifyToken, async (req, res) => {
 
     const isSameUser = user._id.toString() === requesterId;
 
-    const filter = { owner: user._id };
+    const filter = { owners: user._id };
     if (!isSameUser) {
       filter.isPublic = true;
     }
@@ -623,7 +625,7 @@ app.delete('/api/cookbook/:id', verifyToken, async (req, res) => {
   const userId = req.userId;
 
   try {
-      const cookbook = await Cookbook.findOne({ _id: cookbookId, owner: userId });
+      const cookbook = await Cookbook.findOne({ _id: cookbookId, owners: userId });
       if (!cookbook) {
           return res.status(404).json({ error: 'Cookbook not found or not owned by you' });
       }
@@ -633,6 +635,108 @@ app.delete('/api/cookbook/:id', verifyToken, async (req, res) => {
   } catch (err) {
       console.error('Error deleting cookbook:', err);
       res.status(500).json({ error: 'Error deleting cookbook' });
+  }
+});
+
+// Multiple owner stuff... ---------------------------------
+app.post('/api/cookbook/:id/share', verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { toUserId } = req.body;
+    if (!toUserId) {
+      return res.status(400).json({ error: 'Must provide toUserId' });
+    }
+
+    const invitee = await User.findById(toUserId).select('userInfo');
+    if (!invitee) {
+      return res.status(404).json({ error: 'Invitee not found' });
+    }
+
+    const cookbook = await Cookbook.findById(id);
+    if (!cookbook) {
+      return res.status(404).json({ error: 'Cookbook not found' });
+    }
+    if (!cookbook.owners.map(o => o.toString()).includes(req.userId)) {
+      return res.status(403).json({ error: 'Not authorized to invite' });
+    }
+    if (cookbook.collaboratorRequests.includes(toUserId) ||
+        cookbook.owners.includes(toUserId)
+    ) {
+      return res.status(400).json({ error: 'Already invited or owner' });
+    }
+
+    cookbook.collaboratorRequests.push(toUserId);
+    await cookbook.save();
+
+    const inviter = await User.findById(req.userId).select('userInfo');
+
+    await createNotification(
+      'cookbook_share_request',
+      inviter.userInfo,
+      invitee.userInfo,
+      { cookbookId: id }
+    );
+
+    return res.json({ message: 'Share request sent' });
+  } catch (err) {
+    console.error('Error in share route:', err);
+    return res.status(500).json({ error: 'Server error sending invite' });
+  }
+});
+
+app.post('/api/cookbook/:id/share/accept', verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const cookbook = await Cookbook.findById(id);
+    if (!cookbook) {
+      return res.status(404).json({ error: 'Cookbook not found' });
+    }
+
+    if (!cookbook.collaboratorRequests.includes(req.userId)) {
+      return res.status(400).json({ error: 'No pending invite' });
+    }
+
+    const inviterUserId = cookbook.owners[0].toString();
+    cookbook.collaboratorRequests = cookbook.collaboratorRequests.filter(u => u !== req.userId);
+    cookbook.owners.push(req.userId);
+    await cookbook.save();
+    const accepter = await User.findById(req.userId).select('userInfo');
+    const inviter  = await User.findById(inviterUserId).select('userInfo');
+
+    if (!inviter) {
+      return res.status(404).json({ error: 'Original inviter not found' });
+    }
+
+    await createNotification(
+      'cookbook_share_accept',
+      accepter.userInfo,
+      inviter.userInfo,
+      { cookbookId: id }
+    );
+
+    return res.json({ message: 'You are now a co-owner' });
+  } catch (err) {
+    console.error('Error in accept route:', err);
+    return res.status(500).json({ error: 'Server error accepting invite' });
+  }
+});
+
+app.post('/api/cookbook/:id/share/deny', verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const cookbook = await Cookbook.findById(id);
+    if (!cookbook) {
+      return res.status(404).json({ error: 'Cookbook not found' });
+    }
+
+    cookbook.collaboratorRequests = cookbook.collaboratorRequests
+      .filter(r => r !== req.userId);
+    await cookbook.save();
+
+    res.json({ message: 'Invite denied' });
+  } catch (err) {
+    console.error('Error in deny route:', err);
+    res.status(500).json({ error: 'Server error denying invite' });
   }
 });
 
@@ -793,7 +897,7 @@ app.post('/api/recipes', verifyToken, async (req, res) => {
     await newRecipe.save();
 
     if (cookbookId) {
-      const cookbook = await Cookbook.findOne({ _id: cookbookId, owner: userId });
+      const cookbook = await Cookbook.findOne({ _id: cookbookId, owners: [userId] });
       if (cookbook && !cookbook.recipes.includes(newRecipe._id)) {
         cookbook.recipes.push(newRecipe._id);
         await cookbook.save();

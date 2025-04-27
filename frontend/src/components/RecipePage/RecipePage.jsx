@@ -240,7 +240,16 @@ function CreatePage() {
                 </div>
               ))
             ) : (
-              <p className="text-center text-gray-600 col-span-full">No recipes created yet.</p>
+                    <p className="text-center text-gray-700 py-4 col-span-full">
+                      No cookbooks created yet. Click{' '}
+                      <button
+                        onClick={() => setView('create')}
+                        className="text-teal-600 underline"
+                      >
+                        Create
+                      </button>{' '}
+                      to add one.
+                    </p>
             )}
           </div>
         ) : (
