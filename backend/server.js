@@ -1096,6 +1096,7 @@ app2.get('/recipes/:id/comments/count', async (req, res) => {
 //Liking recipe time
 app2.post('/recipes/:id/like', verifyToken, async (req, res) => {
   const recipeId = req.params.id;
+  const isLocal = mongoose.Types.ObjectId.isValid(recipeId);
 
   try {
     const user = await User.findById(req.userId).populate('userInfo');
@@ -1110,7 +1111,7 @@ app2.post('/recipes/:id/like', verifyToken, async (req, res) => {
       liked = true;
     }
 
-    if (liked) {
+    if (liked && isLocal) {
       const recipe = await Recipe.findById(recipeId);
       if (recipe && recipe.isPublic) {
         const ownerUser = await User.findById(recipe.owner).populate('userInfo');

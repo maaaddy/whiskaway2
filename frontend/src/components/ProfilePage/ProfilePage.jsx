@@ -439,13 +439,7 @@ function ProfilePage() {
                       <div className="h-6 w-40 bg-gray-200 rounded-lg animate-pulse z-50" />
                     ) : (
                       <h2 className="text-2xl font-semibold text-gray-900">
-                        {!userData ? (
-                          <div className="h-6 w-40 bg-gray-200 rounded-lg animate-pulse" />
-                        ) : (
-                          <h2 className="text-2xl font-semibold text-gray-900">
-                            {userData.fName} {userData.lName}
-                          </h2>
-                        )}
+                        {userData.fName} {userData.lName}
                       </h2>
                     )}
                     <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
@@ -470,13 +464,14 @@ function ProfilePage() {
                         {userData.bio}
                       </p>
                     )}
-                    <p className="text-gray-700 pt-1">{loading ? (
-                      <div className="h-4 w-24 bg-gray-200 rounded-lg animate-pulse" />
-                    ) : (
-                      <p className="text-gray-700 pt-1">
-                        {loadingFriends ? '---' : `${friendCount} friend${friendCount === 1 ? '' : 's'}`}
-                      </p>
-                    )}
+                    <p className="text-gray-700 pt-1">
+                      {loading ? (
+                        <span className="inline-block h-4 w-24 bg-gray-200 rounded-lg animate-pulse" />
+                      ) : (
+                        loadingFriends
+                          ? '---'
+                          : `${friendCount} friend${friendCount === 1 ? '' : 's'}`
+                      )}
                     </p>
                     <div className="flex gap-3 mt-3">
                       <button

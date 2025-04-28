@@ -190,7 +190,7 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
       }, []);      
 
     return (
-        <div className="fixed w-full bg-white backdrop-blur-md shadow-sm py-1 px-6 flex items-center justify-between z-50">
+        <div className="fixed w-full bg-white backdrop-blur-md shadow-sm px-6 flex h-12 py-1 items-center justify-between z-50">
             <Link to="/" className="flex items-center space-x-3">
                 <img src="/whiskaway.png" alt="Logo" className="w-9 h-auto" />
                 <span className="text-xl text-teal-700 font-semibold font-serif">
@@ -198,7 +198,7 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
                 </span>
             </Link>
 
-            {showSearchBar && (
+            {loggedInUsername && showSearchBar && (
                 <div className="search-container" ref={filterRef}>
                     <input
                         type="text"
@@ -248,7 +248,7 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
                 </div>
             )}
 
-            {showUserSearchBar && (
+            {loggedInUsername && showUserSearchBar && (
                 <div className="search-container">
                     <input
                         type="text"
@@ -279,7 +279,7 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
                 </div>
             )}
 
-            {showRecipeSearchBar && (
+            {loggedInUsername && showRecipeSearchBar && (
                 <div className="search-container">
                     <input
                         type="text"
@@ -292,35 +292,65 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
                 </div>
             )}
 
-            <div className="flex items-center space-x-5 text-teal-700">
+            <div className="flex items-center space-x-5 text-teal-700 flex-shrink-0">
+            {loggedInUsername ? (
+                <>
                 <Link to="/about" className="hover:text-gray-700 transition">
                     <FontAwesomeIcon icon={faCog} size="lg" />
                 </Link>
+
                 <div className="relative">
-                <button
-                    onClick={() => setShowNotifications(prev => !prev)}
+                    <button
+                    onClick={() => setShowNotifications(v => !v)}
                     className="relative hover:text-yellow-600 transition"
-                >
+                    >
                     <FontAwesomeIcon icon={faBell} size="lg" />
                     {unreadCount > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center z-50">
+                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center z-50">
                         {unreadCount > 9 ? '9+' : unreadCount}
-                    </span>
+                        </span>
                     )}
-                </button>
-
-                <NotificationPanel
+                    </button>
+                    <NotificationPanel
                     userInfoId={userInfoId}
                     show={showNotifications}
                     onClose={() => setShowNotifications(false)}
-                />
+                    />
                 </div>
+
                 <Link to="/settings" className="hover:text-gray-700 transition">
                     <FontAwesomeIcon icon={faCog} size="lg" />
                 </Link>
-                <a href="/" onClick={(e) => { e.preventDefault(); onLogout(); }} className="hover:text-red-500 transition">
+
+                <button
+                    onClick={(e) => { e.preventDefault(); onLogout(); }}
+                    className="hover:text-red-500 transition"
+                >
                     <FontAwesomeIcon icon={faSignOutAlt} size="lg" />
-                </a>
+                </button>
+                </>
+            ) : (
+                <>
+                <Link
+                    to="/"
+                    className="px-4 py-2 text-teal-700 font-thin rounded-full justify-center"
+                >
+                    About Us
+                </Link>
+                <Link
+                    to="/login"
+                    className="px-4 py-2 bg-teal-100 text-teal-700 font-semibold hover:bg-teal-200 rounded-full"
+                >
+                    Log In
+                </Link>
+                <Link
+                    to="/signup"
+                    className="px-4 py-2 bg-teal-700 text-white font-semibold rounded-full hover:bg-teal-600"
+                >
+                    Sign Up
+                </Link>
+                </>
+            )}
             </div>
         </div>
     );

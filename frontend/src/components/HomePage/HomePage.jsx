@@ -8,7 +8,7 @@ const SkeletonCard = ({ delay = 0 }) => (
       className="recipe-card animate-pulse"
       style={{ animationDelay: `${delay}ms` }}
     >
-      <div className="w-full h-48 bg-gray-200 rounded-2xl"></div>
+      <div className="w-full h-48 bg-gray-300 rounded-2xl"></div>
     </div>
   </div>
 );
@@ -77,7 +77,7 @@ function HomePage({ searchQuery, recipeFilter }) {
           if (cached) {
             results = JSON.parse(cached);
           } else {
-            const params = { apiKey: API_KEY, number: 24, offset: (page - 1) * 24, query: searchQuery || '' };
+            const params = { apiKey: API_KEY, number: 22, offset: (page - 1) * 24, query: searchQuery || '' };
             if (recipeFilter.type) params.type = recipeFilter.type;
             if (recipeFilter.cuisine) params.cuisine = recipeFilter.cuisine;
             if (recipeFilter.diet) params.diet = recipeFilter.diet;
@@ -130,7 +130,7 @@ function HomePage({ searchQuery, recipeFilter }) {
   const skeletonCount = DISPLAY_COUNT;
 
   return (
-    <div className="homepage py-16">
+    <div className="bg-[#e4f1f0] py-16">
       <div className="recipe-list grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {initialLoading
           ? Array.from({ length: skeletonCount }).map((_, i) => <SkeletonCard key={i} delay={i * 100} />)

@@ -1,63 +1,84 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import TopBar from '../TopBar/TopBar';
 
 function GetStarted() {
   const navigate = useNavigate();
-
   const commonAllergens = [
-    { emoji: '🥛', label: 'Dairy-Free' },
-    { emoji: '🍳', label: 'Egg-Free' },
-    { emoji: '🍞', label: 'Gluten-Free' },
-    { emoji: '🥜', label: 'Peanut-Free' },
-    { emoji: '🌰', label: 'Tree Nut-Free' },
-    { emoji: '🦐', label: 'Shellfish-Free' },
-    { emoji: '🌱', label: 'Soy-Free' },
-    { emoji: '🌾', label: 'Wheat-Free' }
+    { label: 'Vegan' },
+    { label: 'Shellfish-Free' },
+    { label: 'American Dishes' },
+    { label: 'Desserts' },
+    { label: 'Peanut-Free' },
+    { label: 'Keto-Friendly' },
+    { label: 'Side Dish' },
+    { label: 'Gluten-Free' }
   ];
 
   return (
-    <div
-      className="flex flex-col min-h-screen bg-cover bg-center relative"
-      style={{ backgroundImage: "url('/background_whiskaway.jpg')" }}
-    >
-      <div className="flex flex-1">
-        <div
-          className="md:w-2/5 w-full flex flex-col justify-center items-center p-10 text-gray-800 md:ml-10 shadow-2xl relative backdrop-blur-sm bg-white bg-opacity-70"
-        >
-          <div className="logo">
-            <img src="/logo.png" alt="Logo" className="w-28 h-auto pb-4" />
-          </div>
-          <h1 className="text-6xl font-extrabold mb-6 text-teal-700 drop-shadow-lg relative">
-            WhiskAway
+    <div className="flex flex-col h-screen overflow-hidden bg-[#e4f1f0]">
+      <TopBar onLogout={() => {}} />
+
+      <div className="flex flex-1 flex-col md:flex-row pt-4 px-6">
+        <div className="md:w-2/5 w-full p-6 flex flex-col justify-center px-18 pt-20 sm:pt-16 md:pt-12 lg:pt-8">
+          <h1 className="text-4xl font-bold font-serif mb-4 text-teal-700">
+            WhiskAway - a Social Recipe Finding Platform
           </h1>
-          <p className="text-lg text-center mb-28 text-gray-700 drop-shadow-md relative">
-            Your place to find, create, and share recipes!
+          <p className="text-lg text-left mb-4 text-gray-700">
+            Recipe finding made easy. Discover, save, and share recipes with friends. Filter through recipes to your needs.
+            Create custom collaborative cookbooks, upload and browse recipes, and make friends along the way.
           </p>
-          <div className="flex flex-col space-y-4 w-full px-8 relative">
-            <span className="text-center text-xl font-extrabold text-teal-700 drop-shadow-lg relative mb-2">
-              Get Started
-            </span>
-            <button
-              onClick={() => navigate('/signup')}
-              className="w-full px-6 py-3 bg-teal-500 text-white font-semibold rounded-full hover:bg-teal-400 transition-transform transform hover:scale-105 duration-300"
-            >
-              Sign Up
-            </button>
-            <button
-              onClick={() => navigate('/login')}
-              className="w-full px-6 py-3 bg-gray-500 text-white font-semibold rounded-full hover:bg-gray-600 transition-transform transform hover:scale-105 duration-300"
-            >
-              Log In
-            </button>
+        </div>
+
+        <div className="hidden md:block flex-shrink-0 pr-8 pt-20 ml-auto">
+          <div className="hidden md:flex lg:hidden">
+            <img
+              src="/cookbook.jpg"
+              alt="Delicious recipes"
+              className="w-96 h-96 object-cover rounded-lg flex-shrink-0"
+            />
+          </div>
+
+          <div className="hidden lg:block">
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <img
+                src="/salad.jpg"
+                alt="Dish sample"
+                className="w-80 h-64 object-cover rounded-lg flex-shrink-0"
+              />
+              <img
+                src="/cookbook.jpg"
+                alt="Cookbook"
+                className="w-80 h-64 object-cover rounded-lg flex-shrink-0"
+              />
+            </div>
+            <img
+              src="/recipes.jpg"
+              alt="Recipe Searching"
+              className="w-full h-64 object-cover object-top rounded-lg flex-shrink-0"
+            />
           </div>
         </div>
-        <div className="flex-1"></div>
       </div>
-    <p className='text-center text-sm py-2'>Allergies? No worries. Filter through recipes to your needs.</p>
-      <div className="h-12 bg-white bg-opacity-80 backdrop-blur-sm border-t flex items-center justify-evenly px-6">
+
+
+      <div className="justify-center text-center py-2">
+        <p className="text-md font-thin text-teal-900">
+          Allergies? Dieting? No problem. Filter through recipes by type.
+        </p>
+      </div>
+      
+      <div className="bg-white bg-opacity-80 backdrop-blur-sm border-t flex flex-wrap items-center justify-center px-6 sm:px-8 md:px-10 lg:px-12 py-4 gap-2">
         {commonAllergens.map((a, idx) => (
-          <span key={idx} className="text-teal-700 font-semibold text-sm md:text-lg whitespace-nowrap">
-            {a.emoji} {a.label}
+          <span
+            key={idx}
+            className={
+              `text-teal-700 font-thin text-sm whitespace-nowrap px-2 ${
+                idx > 4 ? 'hidden sm:inline-block' : ''
+              }`
+            }
+          >
+            {a.label}
           </span>
         ))}
       </div>
