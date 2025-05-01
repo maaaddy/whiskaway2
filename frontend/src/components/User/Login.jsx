@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import TopBar from '../TopBar/TopBar';
+import TopBar2 from '../TopBar2/TopBar2';
 
 function Login({ onLogin }) {
   const [username, setUsername] = useState('');
@@ -28,7 +28,7 @@ function Login({ onLogin }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#e4f1f0]">
-      <TopBar onLogout={() => {}} />
+      <TopBar2 />
 
       <div className="flex flex-1 justify-center items-center px-4 pt-10">
         <div className="flex flex-col md:flex-row bg-white bg-opacity-70 backdrop-blur-sm shadow-2xl rounded-2xl overflow-hidden max-w-4xl w-full">

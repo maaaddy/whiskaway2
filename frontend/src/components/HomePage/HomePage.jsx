@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import RecipeDetailPage from '../RecipeDetailPage/RecipeDetailPage';
+import Modal from '../Modal';
 
 const SkeletonCard = ({ delay = 0 }) => (
   <div className="hovering group">
@@ -21,6 +23,7 @@ function HomePage({ searchQuery, recipeFilter }) {
   const [apiLoading, setApiLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [selectedId, setSelectedId] = useState(null);
   const API_KEY = process.env.REACT_APP_API_KEY;
 
   const isFiltered = () => {
@@ -61,12 +64,11 @@ function HomePage({ searchQuery, recipeFilter }) {
     const fetchAPI = async () => {
       try {
         let results = [];
-        if (!isFiltered() || page === 1) {
+        if (!isFiltered() && page === 1) {
           const tags = [];
-          if (recipeFilter.type) tags.push(...recipeFilter.type.split(','));
-          if (recipeFilter.cuisine) tags.push(...recipeFilter.cuisine.split(','));
-          if (recipeFilter.diet) tags.push(...recipeFilter.diet.split(','));
-          if (recipeFilter.intolerances) tags.push(...recipeFilter.intolerances.split(','));
+          if (recipeFilter.type)      tags.push(...recipeFilter.type.split(','));
+          if (recipeFilter.cuisine)   tags.push(...recipeFilter.cuisine.split(','));
+          if (recipeFilter.diet)      tags.push(...recipeFilter.diet.split(','));
           const params = { apiKey: API_KEY, number: 24 };
           if (tags.length) params.tags = tags.join(',');
           const { data } = await axios.get('https://api.spoonacular.com/recipes/random', { params });
@@ -77,17 +79,24 @@ function HomePage({ searchQuery, recipeFilter }) {
           if (cached) {
             results = JSON.parse(cached);
           } else {
-            const params = { apiKey: API_KEY, number: 22, offset: (page - 1) * 24, query: searchQuery || '' };
-            if (recipeFilter.type) params.type = recipeFilter.type;
-            if (recipeFilter.cuisine) params.cuisine = recipeFilter.cuisine;
-            if (recipeFilter.diet) params.diet = recipeFilter.diet;
-            if (recipeFilter.intolerances) params.intolerances = recipeFilter.intolerances;
+            const params = {
+              apiKey: API_KEY,
+              number: 24,
+              offset: (page - 1) * 24,
+              query: searchQuery || '',
+              ...(recipeFilter.type         && { type: recipeFilter.type }),
+              ...(recipeFilter.cuisine      && { cuisine: recipeFilter.cuisine }),
+              ...(recipeFilter.diet         && { diet: recipeFilter.diet }),
+              ...(recipeFilter.intolerances && { intolerances: recipeFilter.intolerances }),
+            };
             const { data } = await axios.get('https://api.spoonacular.com/recipes/complexSearch', { params });
             results = data.results;
             if (results.length) sessionStorage.setItem(cacheKey, JSON.stringify(results));
             else setHasMore(false);
           }
         }
+        
+        results = results.filter(r => r.image && r.image.length > 0);
         setSpoonacularRecipes(prev => page === 1 ? results : [...prev, ...results]);
       } catch (err) {
         console.error('Error fetching Spoonacular:', err);
@@ -95,6 +104,7 @@ function HomePage({ searchQuery, recipeFilter }) {
         setApiLoading(false);
       }
     };
+
     fetchAPI();
   }, [page, searchQuery, recipeFilter, userLoading]);
 
@@ -130,7 +140,7 @@ function HomePage({ searchQuery, recipeFilter }) {
   const skeletonCount = DISPLAY_COUNT;
 
   return (
-    <div className="bg-[#e4f1f0] py-16">
+    <div className="py-16">
       <div className="recipe-list grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {initialLoading
           ? Array.from({ length: skeletonCount }).map((_, i) => <SkeletonCard key={i} delay={i * 100} />)
@@ -138,8 +148,10 @@ function HomePage({ searchQuery, recipeFilter }) {
             ? displayedRecipes.map(r => (
               <div key={r.id || r._id} className="hovering group">
                 <div className="recipe-card">
-                  <Link to={`/recipe/${r.id || r._id}`}>
-                    <div className="relative">
+                  <div
+                    className="relative cursor-pointer"
+                    onClick={() => setSelectedId(r.id || r._id)}
+                  >
                       <img
                         src={
                           r.image
@@ -156,13 +168,17 @@ function HomePage({ searchQuery, recipeFilter }) {
                         <h3 className="text-white text-lg font-semibold text-center px-2">{r.title}</h3>
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 </div>
-              </div>
             ))
             : <p>No recipes found. Try adjusting your search or filters!</p>
         }
       </div>
+      {selectedId && (
+        <Modal onClose={() => setSelectedId(null)}>
+          <RecipeDetailPage recipeId={selectedId} />
+        </Modal>
+      )}
       {!initialLoading && apiLoading && (
         <div className="recipe-list grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-4">
           {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} delay={i * 100} />)}

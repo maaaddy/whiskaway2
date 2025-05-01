@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faPaperPlane, faBlender, faListOl, faSeedling, faBookMedical, faComment, faAngleDown, faAngleUp } from "@fortawesome/free-solid-svg-icons";
 import { faHeart as heartSolid } from "@fortawesome/free-solid-svg-icons";
 import { faHeart as heartOutline } from "@fortawesome/free-regular-svg-icons";
 
-function RecipeDetailPage() {
+function RecipeDetailPage({ recipeId }) {
     const [recipe, setRecipe] = useState(null);
     const [nutrition, setNutrition] = useState(null);
     const [comments, setComments] = useState([]);
@@ -26,7 +25,8 @@ function RecipeDetailPage() {
     const [extendedNutrition, setExtendedNutrition] = useState(null);
     const [showMoreNutrition, setShowMoreNutrition] = useState(false);
     const [showFriendList, setShowFriendList] = useState(false);
-    const { id } = useParams(); 
+    const { id: routeId } = useParams();
+    const id = recipeId || routeId;
     const API_KEY = process.env.REACT_APP_API_KEY;
     const MAX_COMMENT_LENGTH = 150;
 
@@ -42,6 +42,8 @@ function RecipeDetailPage() {
     };      
     
     useEffect(() => {
+        if (!id) return;
+
         const fetchFriends = async () => {
             try {
                 const profileRes = await axios.get('/api/profile');
@@ -192,10 +194,26 @@ function RecipeDetailPage() {
         }
       };
       
-    if (!recipe) return <p>Loading recipe...</p>;
+    if (!recipe) {
+        return (
+            <div className="pt-16 max-w-4xl mx-auto px-4 pb-20">
+                <div className="animate-pulse space-y-6">
+                    <div className="h-96 bg-gray-200 rounded-xl" />
+
+                    <div className="h-8 bg-gray-200 rounded w-1/3" />
+
+                    <div className="space-y-4">
+                    <div className="h-4 bg-gray-200 rounded" />
+                    <div className="h-4 bg-gray-200 rounded w-5/6" />
+                    <div className="h-4 bg-gray-200 rounded w-2/3" />
+                    </div>
+                </div>
+            </div>
+        );
+        }
 
     return (
-        <div className="pt-16 max-w-4xl mx-auto px-4 pb-20">
+        <div className="pt-8 max-w-4xl mx-auto px-4 pb-20">
             <div className="w-full mb-6">
             <img
             src={
@@ -206,7 +224,7 @@ function RecipeDetailPage() {
                     : '/placeholder.jpg'
             }
             alt={recipe.title}
-            className="w-full max-h-[500px] object-contain rounded-xl shadow"
+            className="w-full max-h-[500px] object-contain rounded-xl shadow bg-white"
             />
 
             </div>
@@ -383,7 +401,7 @@ function RecipeDetailPage() {
                     </div>
                 ))
                 ) : (
-                <p>No instructions available.</p>
+                    <p>No instructions available.</p>
                 )}
                 </div>
             </div>
@@ -404,7 +422,7 @@ function RecipeDetailPage() {
                         <div className="text-center mt-4">
                             <button
                                 onClick={() => setShowMoreNutrition(!showMoreNutrition)}
-                                className="text-blue-600 hover:underline"
+                                className="text-teal-600 hover:underline"
                             >
                                 {showMoreNutrition ? "Show Less" : "Show More"}
                             </button>
