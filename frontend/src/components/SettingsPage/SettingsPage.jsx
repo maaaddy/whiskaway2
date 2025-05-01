@@ -109,9 +109,6 @@ const SettingsPage = () => {
   
 
   const handleRemoveFriend = async (friendId) => {
-    const confirmed = window.confirm('Are you sure you want to remove this friend?');
-    if (!confirmed) return;
-
     try {
       await axios.put('/api/friends/remove', {
         userId: userInfoId,

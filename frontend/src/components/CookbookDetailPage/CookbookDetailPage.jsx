@@ -4,6 +4,9 @@ import axiosRateLimit from 'axios-rate-limit';
 import { useParams, Link } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import InviteModal from '../InviteModal/InviteModal';
+import { FaTrash } from 'react-icons/fa';
+import Modal from '../Modal';
+import RecipeDetailPage from '../RecipeDetailPage/RecipeDetailPage';
 
 const axiosInstance = axiosRateLimit(axios.create(), { maxRequests: 5, perMilliseconds: 1000 });
 
@@ -15,80 +18,92 @@ function CookbookDetailPage() {
   const [isOwner, setIsOwner] = useState(false);
   const [currentUsername, setCurrentUsername] = useState('');
   const [inviteMode, setInviteMode] = useState(false);
-  const API_KEY = process.env.REACT_APP_API_KEY;
+  const [ownerUsernames, setOwnerUsernames] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedRecipeId, setSelectedRecipeId] = useState(null);
 
-  useEffect(() => {
-    const fetchCookbook = async () => {
-      const profileRes = await axios.get('/api/profile');
-      setCurrentUsername(profileRes.data.username);
-  
-      const cached = localStorage.getItem(`cookbook_${id}`);
-      if (cached) {
-        const { timestamp, cookbook, recipes } = JSON.parse(cached);
-        const isFresh = Date.now() - timestamp < 1000 * 60 * 10;
-        if (isFresh) {
-          setIsOwner(
-            cookbook.owners
-              .map(o => o.toString())
-              .includes(profileRes.data.userId)
-          );
-          setCookbook(cookbook);
-          setRecipes(recipes);
-          setLoading(false);
-          return;
-        }
-      }
-  
-      try {
-        const response = await axios.get(`/api/cookbook/${id}`);
-        setCookbook(response.data);
+  const API_KEY = process.env.REACT_APP_API_KEY;
+  const fetchCookbook = async () => {
+    const profileRes = await axios.get('/api/profile');
+    setCurrentUsername(profileRes.data.username);
+
+    const cached = localStorage.getItem(`cookbook_${id}`);
+    if (cached) {
+      const { timestamp, cookbook, recipes } = JSON.parse(cached);
+      const isFresh = Date.now() - timestamp < 1000 * 60 * 10;
+      if (isFresh) {
         setIsOwner(
-          response.data.owners
+          cookbook.owners
             .map(o => o.toString())
             .includes(profileRes.data.userId)
         );
-        setCurrentUsername(profileRes.data.username);
-  
-        const allRecipes = await Promise.all(
-          response.data.recipes.map(async recipeId => {
-            const isUserRecipe = /^[a-f\d]{24}$/i.test(recipeId);
-            if (isUserRecipe) {
-              try {
-                const res = await axios.get(`/api/recipes/${recipeId}`);
-                return { ...res.data, id: recipeId, isUser: true };
-              } catch {
-                return null;
-              }
-            } else {
-              try {
-                const res = await axiosInstance.get(
-                  `https://api.spoonacular.com/recipes/${recipeId}/information?apiKey=${API_KEY}`
-                );
-                return res.data;
-              } catch {
-                return null;
-              }
-            }
-          })
+        setCookbook(cookbook);
+        setRecipes(recipes);
+        const ownerProfiles = await Promise.all(
+          cookbook.owners.map(ownerId => axios.get(`/api/users/${ownerId}`))
         );
-        const cleanRecipes = allRecipes.filter(Boolean);
-        setRecipes(cleanRecipes);
-  
-        localStorage.setItem(
-          `cookbook_${id}`,
-          JSON.stringify({
-            timestamp: Date.now(),
-            cookbook: response.data,
-            recipes: cleanRecipes,
-          })
-        );
-      } catch (err) {
-        console.error('Error fetching cookbook:', err);
-      } finally {
+        setOwnerUsernames(ownerProfiles.map(r => r.data.username));
         setLoading(false);
+        return;
       }
-    };
-  
+    }
+
+    try {
+      const response = await axios.get(`/api/cookbook/${id}`);
+      setCookbook(response.data);
+      setIsOwner(
+        response.data.owners
+          .map(o => o.toString())
+          .includes(profileRes.data.userId)
+      );
+      const ownerIds = response.data.owners;
+      const ownerProfiles = await Promise.all(
+        ownerIds.map(ownerId => axios.get(`/api/users/${ownerId}`))
+      );
+      setOwnerUsernames(ownerProfiles.map(r => r.data.username));
+      setCurrentUsername(profileRes.data.username);
+
+      const allRecipes = await Promise.all(
+        response.data.recipes.map(async recipeId => {
+          const isUserRecipe = /^[a-f\d]{24}$/i.test(recipeId);
+          if (isUserRecipe) {
+            try {
+              const res = await axios.get(`/api/recipes/${recipeId}`);
+              return { ...res.data, id: recipeId, isUser: true };
+            } catch {
+              return null;
+            }
+          } else {
+            try {
+              const res = await axiosInstance.get(
+                `https://api.spoonacular.com/recipes/${recipeId}/information?apiKey=${API_KEY}`
+              );
+              return res.data;
+            } catch {
+              return null;
+            }
+          }
+        })
+      );
+      const cleanRecipes = allRecipes.filter(Boolean);
+      setRecipes(cleanRecipes);
+
+      localStorage.setItem(
+        `cookbook_${id}`,
+        JSON.stringify({
+          timestamp: Date.now(),
+          cookbook: response.data,
+          recipes: cleanRecipes,
+        })
+      );
+    } catch (err) {
+      console.error('Error fetching cookbook:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchCookbook();
   }, [id, API_KEY]);  
 
@@ -110,46 +125,92 @@ function CookbookDetailPage() {
     <div className="back max-w-6xl mx-auto p-6 pb-20">
       <Toaster position='top-right' />
       {loading ? (
-        <p className="text-center text-lg text-gray-600 mt-20">Loading cookbook...</p>
-        ) : (
+        <div className="space-y-6 animate-pulse text-left">
+          <div className="pl-4 space-y-2">
+            <div className="h-12 bg-gray-200 rounded w-3/5" />
+            <div className="h-6  bg-gray-200 rounded w-1/5" />
+          </div>
+
+          <div className="pl-4 flex items-center space-x-4">
+            <div className="h-6 bg-gray-200 rounded w-24" />
+            <div className="h-6 bg-gray-200 rounded w-32 pb-4" />
+          </div>
+
+          <div className="pl-4 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {[...Array(6)].map((_, idx) => (
+              <div key={idx} className="space-y-4">
+                <div className="h-48 bg-gray-200 rounded-lg" />
+                <div className="h-4  bg-gray-200 rounded w-3/4" />
+                <div className="h-4  bg-gray-200 rounded w-1/2" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
         <>
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-semibold text-teal-900 mb-2">{cookbook.title}</h1>
+        <div className="text-left mb-6 font-serif">
+          <h1 className="text-4xl font-semibold text-teal-800 mb-2">{cookbook.title}</h1>
           <p className="text-gray-500 text-sm">
             {recipes.length} {recipes.length === 1 ? 'Recipe' : 'Recipes'}
           </p>
         </div>
+        {ownerUsernames.length > 0 && (
+          <div className="text-gray-600 mb-2 text-sm">
+            {ownerUsernames.length === 1 ? 'Owner' : 'Owners'}:{' '}
+            {ownerUsernames.map((username, idx) => (
+              <Link
+                key={username}
+                to={`/profile/${username}`}
+                className="text-teal-600 hover:underline"
+              >
+                {username}{idx < ownerUsernames.length - 1 ? ', ' : ''}
+              </Link>
+            ))}
+          </div>
+        )}
         {isOwner && (
+          <div className="text-gray-600 mb-2 text-sm">
           <button
-            className="mt-4 bg-teal-500 text-white px-4 py-2 rounded"
+            className="mb-4 bg-teal-500 text-white px-4 py-2 rounded"
             onClick={() => setInviteMode(true)}
           >
             + Invite collaborator
           </button>
+          </div>
         )}
         {isOwner && inviteMode && (
           <InviteModal
             cookbookId={id}
             currentUsername={currentUsername}
             onClose={() => setInviteMode(false)}
-            onInviteSuccess={() => { toast.success('Invite sent!'); setInviteMode(false); }}
+            onInviteSuccess={async () => {
+              toast.success('Collaborator added!');
+              setInviteMode(false);
+              await fetchCookbook();
+            }}
           />
         )}
-        {cookbook.recipes.length === 0 ? (
-          <div className="text-center mt-8">
-          <p className="text-gray-600 text-lg mb-2">This cookbook doesn't have any recipes yet.</p>
+        {cookbook.recipes.length === 0 && isOwner ? (
+          <div className="text-center mt-4 font-serif border-t-2">
+          <p className="text-gray-600 text-lg mt-8 my-2">This cookbook doesn't have any recipes yet.</p>
           <Link to="/" className="text-teal-600 hover:text-teal-700 underline">
             Browse Recipes
           </Link>
           </div>
         ) : (
-        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 border-t-2 pt-6">
           {recipes.length > 0 ? (
             recipes.map((recipe) => {
               if (!recipe || !recipe.title) return null;
               return (
                 <div key={recipe.id} className="relative group">
-                <Link to={`/recipe/${recipe.id}`} className="bg-white rounded-xl shadow hover:shadow-md transition overflow-hidden block">
+                <div
+                  onClick={() => {
+                    setSelectedRecipeId(recipe.id);
+                    setShowModal(true);
+                  }}
+                  className="bg-white rounded-xl shadow hover:shadow-md transition overflow-hidden block cursor-pointer"
+                >
                   <div className="h-48 w-full overflow-hidden">
                     <img
                       src={recipe.isUser ? `data:image/jpeg;base64,${recipe.image}` : recipe.image}
@@ -171,18 +232,14 @@ function CookbookDetailPage() {
                       {recipe.servings ? `Serves ${recipe.servings}` : "No servings info"}
                     </p>
                   </div>
-                </Link>
+                  </div>
                 {isOwner && (
                   <button
                     onClick={() => handleRemoveRecipe(recipe.id)}
                     className="absolute top-2 right-2 bg-white/80 text-gray-500 hover:text-red-600 p-2 rounded-full z-10 opacity-0 group-hover:opacity-100 transition"
                     title="Remove from cookbook"
                   >
-                    <svg className="w-4 h-4 fill-current" viewBox="0 0 36 36">
-                      <path d="M6,9V31a2.93,2.93,0,0,0,2.86,3H27.09A2.93,2.93,0,0,0,30,31V9Zm9,20H13V14h2Zm8,0H21V14h2Z"></path>
-                      <path d="M30.73,5H23V4A2,2,0,0,0,21,2h-6.2A2,2,0,0,0,13,4V5H5A1,1,0,1,0,5,7H30.73a1,1,0,0,0,0-2Z"></path>
-                      <rect x="0" y="0" width="36" height="36" fillOpacity="0" />
-                    </svg>
+                    <FaTrash />
                   </button>
                 )}
                 </div>
@@ -190,13 +247,21 @@ function CookbookDetailPage() {
             }
           )
             ) : (
-              <p className="text-center text-gray-600 col-span-full">
+              <p className="text-center text-gray-600 col-span-full mt-4 pt-6 text-lg font-serif">
                 No visible recipes in this cookbook.
               </p>
             )}
         </div>
         )}
           </>
+        )}
+        {showModal && selectedRecipeId && (
+          <Modal onClose={() => {
+            setShowModal(false);
+            setSelectedRecipeId(null);
+          }}>
+            <RecipeDetailPage recipeId={selectedRecipeId} />
+          </Modal>
         )}
     </div>
   );

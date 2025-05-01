@@ -158,9 +158,11 @@ function CookbookPage() {
                 type="text"
                 placeholder="e.g. My Summer Recipes"
                 value={newCookbookTitle}
+                maxLength={18}
                 onChange={(e) => setNewCookbookTitle(e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring font-serif focus:ring-blue-200"
               />
+              <p className="text-xs text-gray-500 mt-1">{newCookbookTitle.length}/18 characters</p>
             </div>
             <div className="mb-4 font-serif">
               <label className="block text-gray-700 mb-1">Select a Cover</label>

@@ -55,22 +55,22 @@ export default function InviteModal({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-96">
-        <h2 className="text-xl font-semibold mb-4">Invite Collaborator</h2>
-        <p className='text-sm py-4'>Collaborators will have full access to your cookbook, including deletion.</p>
+        <h2 className="text-xl font-semibold font-serif text-teal-800 mb-4">Invite Collaborator</h2>
+        <p className='text-sm font-serif text-gray-500 py-4'>Collaborators will have full access to your cookbook, including deletion.</p>
         <input
-          className="w-full border p-2 rounded mb-4"
+          className="w-full border font-serif text-gray-500 p-2 rounded mb-4"
           placeholder="Search by username…"
           value={query}
           onChange={e => setQuery(e.target.value)}
         />
         {loading && <p className="text-sm text-gray-500">Searching…</p>}
         {!loading && results.length === 0 && query.trim().length >= 2 && (
-          <p className="text-sm text-gray-500">No users found</p>
+          <p className="text-sm font-serif font-thin text-gray-500">No users found</p>
         )}
         <ul className="max-h-60 overflow-y-auto space-y-2">
           {results.map(user => (
             <li key={user._id} className="flex justify-between items-center">
-              <span>{user.username}</span>
+              <span className='font-serif'>{user.username}</span>
               <button
                 className="text-sm bg-teal-500 text-white px-2 py-1 rounded disabled:opacity-50"
                 disabled={invitingId === user._id}
@@ -82,7 +82,7 @@ export default function InviteModal({
           ))}
         </ul>
         <div className="mt-4 text-right">
-          <button className="text-gray-600 hover:underline" onClick={onClose}>
+          <button className="text-teal-600 hover:underline" onClick={onClose}>
             Cancel
           </button>
         </div>
