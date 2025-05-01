@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import Select from 'react-select';
-import { FaLock, FaLockOpen } from 'react-icons/fa';
+import { FaLock, FaLockOpen, FaPlus, FaTrash } from 'react-icons/fa';
+import Modal from '../Modal';
+import RecipeDetailPage from '../RecipeDetailPage/RecipeDetailPage';
+
 
 const mealTypeOptions = [
   { value: 'main course', label: 'Main Course' },
@@ -83,9 +86,7 @@ const intoleranceOptions = [
 ];
 
 function CreatePage() {
-    const [view, setView] = useState('myRecipes');
     const [recipes, setRecipes] = useState([]);
-  
     const [title, setTitle] = useState('');
     const [prepTime, setPrepTime] = useState('');
     const [cookTime, setCookTime] = useState('');
@@ -98,6 +99,10 @@ function CreatePage() {
     const [isPublic, setIsPublic] = useState(true);
     const [link, setLink] = useState('');
     const [image, setImage] = useState(null);
+    const [showModal, setShowModal] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [selectedId, setSelectedId] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
   
     const handleIngredientChange = (index, value) => {
       const newIngredients = [...ingredients];
@@ -124,6 +129,7 @@ function CreatePage() {
   
     const handleSubmit = async (e) => {
       e.preventDefault();
+      setIsSubmitting(true);
       try {
         const recipeData = {
           title,
@@ -139,12 +145,27 @@ function CreatePage() {
           cookbookId
         };
         await axios.post('/api/recipes', recipeData);
-        alert('Recipe created!');
-        setView('myRecipes');
+        await fetchUserRecipes();
+        setShowModal(false);
+        
+        setTitle('');
+        setPrepTime('');
+        setCookTime('');
+        setServings('');
+        setIngredients(['']);
+        setInstructions(['']);
+        setTags({ mealType: [], cuisine: [], diet: [], intolerance: [] });
+        setCookbookId('');
+        setIsPublic(true);
+        setImage(null);
+        setShowModal(false);
+        setTimeout(() => alert('Recipe created!'), 100);
       } catch (err) {
-        console.error('Error submitting recipe:', err);
+        console.error('Error creating recipe:', err);
+      } finally {
+        setIsSubmitting(false);
       }
-    };
+    };    
   
     const fetchUserRecipes = async () => {
       try {
@@ -152,16 +173,17 @@ function CreatePage() {
         setRecipes(res.data);
       } catch (err) {
         console.error('Failed to fetch user recipes:', err);
+      } finally {
+        setIsLoading(false);
       }
-    };
-  
-    useEffect(() => {
-      if (view === 'myRecipes') {
-        fetchUserRecipes();
-      }
-    }, [view]);
+    }
 
     const handleDeleteRecipe = async (id) => {
+      const confirmed = window.confirm(
+        'Are you sure you want to delete this recipe? This action cannot be undone.'
+      );
+      if (!confirmed) return;
+
       try {
         await axios.delete(`/api/recipes/${id}`);
         setRecipes(prev => prev.filter(recipe => recipe._id !== id));
@@ -182,148 +204,281 @@ function CreatePage() {
         console.error("Error updating recipe privacy:", err);
       }
     };    
+
+    useEffect(() => {
+      fetchUserRecipes();
+    }, []);
   
     return (
-      <div className="p-6 max-w-5xl mx-auto py-16">
-        <div className="flex justify-center space-x-8 mb-6">
-          <button
-            className={`text-lg font-medium pb-2 ${view === 'myRecipes' ? 'border-b-2 border-teal-600 text-teal-600' : 'text-gray-600'} transition`}
-            onClick={() => setView('myRecipes')}
-          >
-            My Recipes
-          </button>
-          <button
-            className={`text-lg font-medium pb-2 ${view === 'create' ? 'border-b-2 border-teal-600 text-teal-600' : 'text-gray-600'} transition`}
-            onClick={() => setView('create')}
-          >
-            Create
-          </button>
+      <div className="p-6 max-w-5xl mx-auto py-16 relative">
+        <div className="text-center font-serif font-semibold text-2xl text-teal-700 py-2 pb-4">
+          <p>Recipes</p>
         </div>
-  
-        {view === 'myRecipes' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {recipes.length > 0 ? (
-              recipes.map(recipe => (
+        {isLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, idx) => (
+              <div key={idx} className="animate-pulse space-y-4">
+                <div className="h-64 bg-gray-200 rounded-lg" />
+              </div>
+            ))}
+          </div>
+        ) : recipes.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+            {recipes.map(recipe => (
+              <div
+                key={recipe._id}
+                className="relative rounded-lg overflow-hidden shadow hover:shadow-lg transition group h-64 w-52"
+              >
                 <div
                   key={recipe._id}
-                  className="relative rounded-lg overflow-hidden shadow hover:shadow-lg transition group"
+                  className="relative w-full h-64 cursor-pointer"
+                  onClick={() => {
+                    setSelectedId(recipe._id);
+                    setShowModal(true);
+                  }}
                 >
-                  <Link to={`/recipe/${recipe._id}`} className="block w-full h-64">
-                    <img
-                      src={recipe.image ? `data:image/jpeg;base64,${recipe.image}` : ""}
-                      alt={recipe.title}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="text-white text-lg font-semibold bg-black/50 px-3 py-1 rounded-md translate-y-[-20%] text-center">
-                        {recipe.title}
-                      </div>
+                  <img
+                    src={recipe.image ? `data:image/jpeg;base64,${recipe.image}` : '/placeholder.jpg'}
+                    alt={recipe.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="text-white text-lg font-semibold bg-black/50 px-3 py-1 rounded-md -translate-y-1/4 text-center">
+                      {recipe.title}
                     </div>
-                  </Link>
-
-                  <button
-                    onClick={() => handleDeleteRecipe(recipe._id)}
-                    className="absolute top-2 right-2 bg-white/80 text-gray-500 hover:text-red-600 p-1.5 rounded-full z-5 transition"
-                  >
-                    <svg className="w-4 h-4 fill-current" viewBox="0 0 36 36">
-                      <path d="M6,9V31a2.93,2.93,0,0,0,2.86,3H27.09A2.93,2.93,0,0,0,30,31V9Zm9,20H13V14h2Zm8,0H21V14h2Z"></path>
-                      <path d="M30.73,5H23V4A2,2,0,0,0,21,2h-6.2A2,2,0,0,0,13,4V5H5A1,1,0,1,0,5,7H30.73a1,1,0,0,0,0-2Z"></path>
-                    </svg>
-                  </button>
-
-                  <button
-                    onClick={() => toggleRecipePrivacy(recipe._id, recipe.isPublic)}
-                    className="absolute bottom-2 right-2 bg-white/80 text-gray-700 hover:text-gray-900 p-1.5 rounded-full z-5"
-                  >
-                    {recipe.isPublic ? <FaLockOpen size={18} /> : <FaLock size={18} />}
-                  </button>
+                  </div>
                 </div>
-              ))
-            ) : (
-                    <p className="text-center text-gray-700 py-4 col-span-full">
-                      No cookbooks created yet. Click{' '}
-                      <button
-                        onClick={() => setView('create')}
-                        className="text-teal-600 underline"
-                      >
-                        Create
-                      </button>{' '}
-                      to add one.
-                    </p>
-            )}
+    
+                <button
+                  onClick={() => handleDeleteRecipe(recipe._id)}
+                  className="absolute top-2 right-2 bg-white/80 text-gray-500 hover:text-red-600 p-1.5 rounded-full z-10 transition"
+                >
+                  <FaTrash size={16} />
+                </button>
+                <button
+                  onClick={() => toggleRecipePrivacy(recipe._id, recipe.isPublic)}
+                  className="absolute bottom-2 right-2 bg-white/80 text-gray-700 hover:text-gray-900 p-1.5 rounded-full z-10"
+                >
+                  {recipe.isPublic ? <FaLockOpen size={18} /> : <FaLock size={18} />}
+                </button>
+              </div>
+            ))}
           </div>
         ) : (
-        <div className="max-w-4xl mx-auto p-6">
-            <h2 className="text-3xl font-bold mb-6 text-center">New Recipe</h2>
-            <form onSubmit={handleSubmit} className="space-y-6">
-            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" className="w-full border p-2 rounded" required />
-            <div className="flex gap-4">
-                <input type="number" value={prepTime} onChange={(e) => setPrepTime(e.target.value)} placeholder="Prep Time (min)" className="w-full border p-2 rounded" />
-                <input type="number" value={cookTime} onChange={(e) => setCookTime(e.target.value)} placeholder="Cook Time (min)" className="w-full border p-2 rounded" />
-                <input type="text" value={servings} onChange={(e) => setServings(e.target.value)} placeholder="Servings" className="w-full border p-2 rounded" />
-            </div>
+          <div className="flex items-center justify-center h-64">
+            <p className="text-center text-gray-700">
+              No recipes created yet. Click{' '}
+              <button onClick={() => setShowModal(true)} className="text-teal-600 underline">
+                + Add Recipe
+              </button>{' '}
+              to create one.
+            </p>
+          </div>
+        )}
+        <button
+          onClick={() => setShowModal(true)}
+          className="
+          fixed bottom-6 right-6 bg-teal-600 hover:bg-teal-700 text-white p-4 rounded-full shadow-lg focus:outline-none mb-16">
+          <FaPlus/>
+        </button>
+    
+        {showModal && selectedId && (
+          <Modal onClose={() => {
+            setShowModal(false);
+            setSelectedId(null);
+          }}>
+            <RecipeDetailPage recipeId={selectedId} />
+          </Modal>
+        )}
         
-            <div>
-                <label className="font-semibold">Ingredients</label>
-                {ingredients.map((item, idx) => (
-                <input key={idx} value={item} onChange={(e) => handleIngredientChange(idx, e.target.value)} className="w-full mb-2 border p-2 rounded" />
-                ))}
-                <button type="button" onClick={addIngredient} className="text-blue-600 text-sm">+ Add Ingredient</button>
-            </div>
-        
-            <div>
-                <label className="font-semibold">Instructions</label>
-                {instructions.map((step, idx) => (
-                <textarea key={idx} value={step} onChange={(e) => handleInstructionChange(idx, e.target.value)} className="w-full mb-2 border p-2 rounded" rows="2" />
-                ))}
-                <button type="button" onClick={addInstruction} className="text-blue-600 text-sm">+ Add Step</button>
-            </div>
-        
-            <div className="space-y-4">
-                <div>
-                <label className="font-semibold block mb-2">Meal Type</label>
-                <Select isMulti options={mealTypeOptions} value={tags.mealType} onChange={(selected) => setTags(prev => ({ ...prev, mealType: selected }))} />
+        {showModal && !selectedId && (
+          <Modal onClose={() => setShowModal(false)}>
+            <div className="max-w-4xl mx-auto p-6">
+              <h2 className="text-3xl font-bold mb-6 text-center">New Recipe</h2>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <input
+                  type="text"
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  placeholder="Title"
+                  className="w-full border p-2 rounded"
+                  required
+                />
+    
+                <div className="flex gap-4">
+                  <input
+                    type="number"
+                    value={prepTime}
+                    onChange={e => setPrepTime(e.target.value)}
+                    placeholder="Prep Time (min)"
+                    className="w-full border p-2 rounded"
+                  />
+                  <input
+                    type="number"
+                    value={cookTime}
+                    onChange={e => setCookTime(e.target.value)}
+                    placeholder="Cook Time (min)"
+                    className="w-full border p-2 rounded"
+                  />
+                  <input
+                    type="text"
+                    value={servings}
+                    onChange={e => setServings(e.target.value)}
+                    placeholder="Servings"
+                    className="w-full border p-2 rounded"
+                  />
                 </div>
+    
                 <div>
-                <label className="font-semibold block mb-2">Cuisine</label>
-                <Select isMulti options={cuisineOptions} value={tags.cuisine} onChange={(selected) => setTags(prev => ({ ...prev, cuisine: selected }))} />
+                  <label className="font-semibold block mb-1">Ingredients</label>
+                  {ingredients.map((item, idx) => (
+                    <input
+                      key={idx}
+                      value={item}
+                      onChange={e => handleIngredientChange(idx, e.target.value)}
+                      className="w-full mb-2 border p-2 rounded"
+                    />
+                  ))}
+                  <button type="button" onClick={addIngredient} className="text-blue-600 text-sm">
+                    + Add Ingredient
+                  </button>
                 </div>
+    
                 <div>
-                <label className="font-semibold block mb-2">Diet</label>
-                <Select isMulti options={dietOptions} value={tags.diet} onChange={(selected) => setTags(prev => ({ ...prev, diet: selected }))} />
+                  <label className="font-semibold block mb-1">Instructions</label>
+                  {instructions.map((step, idx) => (
+                    <textarea
+                      key={idx}
+                      value={step}
+                      onChange={e => handleInstructionChange(idx, e.target.value)}
+                      className="w-full mb-2 border p-2 rounded"
+                      rows="2"
+                    />
+                  ))}
+                  <button type="button" onClick={addInstruction} className="text-blue-600 text-sm">
+                    + Add Step
+                  </button>
                 </div>
+    
+                <div className="space-y-4">
+                  <div>
+                    <label className="font-semibold block mb-2">Meal Type</label>
+                    <Select
+                      isMulti
+                      options={mealTypeOptions}
+                      value={tags.mealType}
+                      onChange={selected => setTags(prev => ({ ...prev, mealType: selected }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="font-semibold block mb-2">Cuisine</label>
+                    <Select
+                      isMulti
+                      options={cuisineOptions}
+                      value={tags.cuisine}
+                      onChange={selected => setTags(prev => ({ ...prev, cuisine: selected }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="font-semibold block mb-2">Diet</label>
+                    <Select
+                      isMulti
+                      options={dietOptions}
+                      value={tags.diet}
+                      onChange={selected => setTags(prev => ({ ...prev, diet: selected }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="font-semibold block mb-2">Intolerances</label>
+                    <Select
+                      isMulti
+                      options={intoleranceOptions}
+                      value={tags.intolerance}
+                      onChange={selected => setTags(prev => ({ ...prev, intolerance: selected }))}
+                    />
+                  </div>
+                </div>
+    
                 <div>
-                <label className="font-semibold block mb-2">Intolerances</label>
-                <Select isMulti options={intoleranceOptions} value={tags.intolerance} onChange={(selected) => setTags(prev => ({ ...prev, intolerance: selected }))} />
+                  <label className="block font-medium mb-1">Add to Cookbook</label>
+                  <select
+                    value={cookbookId}
+                    onChange={e => setCookbookId(e.target.value)}
+                    className="w-full border p-2 rounded"
+                  >
+                    <option value="">Select a Cookbook</option>
+                    {cookbooks.map(cb => (
+                      <option key={cb._id} value={cb._id}>{cb.title}</option>
+                    ))}
+                  </select>
                 </div>
+    
+                <div>
+                  <label className="block font-medium mb-1">Visibility</label>
+                  <label className="inline-flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={isPublic}
+                      onChange={() => setIsPublic(!isPublic)}
+                      className="mr-2"
+                    />
+                    {isPublic ? 'Public' : 'Private'}
+                  </label>
+                </div>
+                <div className="mb-4">
+                  {image ? (
+                    <img
+                      src={image}
+                      alt="Preview"
+                      className="w-52 h-64 object-cover rounded-lg border border-gray-300"
+                    />
+                  ) : (
+                    <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500">
+                      Preview will appear here
+                    </div>
+                  )}
+                </div>
+                <input type="file" onChange={handleImageUpload} className="w-full" />
+    
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={`
+                    w-full py-3 rounded-lg font-medium transition
+                    ${isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-teal-500 hover:bg-teal-600 text-white'}
+                  `}
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center justify-center">
+                      <svg
+                        className="w-5 h-5 mr-2 animate-spin text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 01-8 8z"
+                        />
+                      </svg>
+                      Publishing…
+                    </span>
+                  ) : (
+                    'Publish Recipe'
+                  )}
+                </button>
+              </form>
             </div>
-        
-            <div>
-                <label className="block font-medium mb-1">Add to Cookbook</label>
-                <select value={cookbookId} onChange={(e) => setCookbookId(e.target.value)} className="w-full border p-2 rounded">
-                <option value="">Select a Cookbook</option>
-                {cookbooks.map(cb => (
-                    <option key={cb._id} value={cb._id}>{cb.title}</option>
-                ))}
-                </select>
-            </div>
-        
-            <div>
-                <label className="block font-medium mb-1">Visibility</label>
-                <label className="inline-flex items-center">
-                <input type="checkbox" checked={isPublic} onChange={() => setIsPublic(!isPublic)} className="mr-2" />
-                {isPublic ? 'Public' : 'Private'}
-                </label>
-            </div>
-        
-            <input type="text" value={link} onChange={(e) => setLink(e.target.value)} placeholder="Optional Link" className="w-full border p-2 rounded" />
-            <input type="file" onChange={handleImageUpload} className="w-full" />
-        
-            <button type="submit" className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-3 rounded-xl">
-                Publish Recipe
-            </button>
-            </form>
-        </div>
+          </Modal>
         )}
       </div>
     );

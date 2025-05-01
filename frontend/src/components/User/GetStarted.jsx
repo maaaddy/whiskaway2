@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import TopBar from '../TopBar/TopBar';
+import TopBar2 from '../TopBar2/TopBar2';
 
 function GetStarted() {
   const navigate = useNavigate();
@@ -17,7 +17,7 @@ function GetStarted() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-[#e4f1f0]">
-      <TopBar onLogout={() => {}} />
+      <TopBar2 />
 
       <div className="flex flex-1 flex-col md:flex-row pt-4 px-6">
         <div className="md:w-2/5 w-full p-6 flex flex-col justify-center px-18 pt-20 sm:pt-16 md:pt-12 lg:pt-8">

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Select from 'react-select';
-import TopBar from '../TopBar/TopBar';
+import TopBar2 from '../TopBar2/TopBar2';
 
 const intoleranceOptions = [
   { value: 'dairy', label: 'Dairy-Free' },
@@ -60,12 +60,12 @@ function SignUp({ onSignUp }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#e4f1f0]">
-      <TopBar onLogout={() => {}} />
+      <TopBar2 />
 
       <div className="flex flex-1 justify-center items-center px-4 pt-12">
         <div className="flex flex-col md:flex-row bg-white bg-opacity-70 backdrop-blur-sm shadow-2xl rounded-2xl overflow-hidden w-full max-w-5xl mx-auto">
 
-          <div className="w-full md:w-2/3 p-10">
+          <div className="w-full md:w-2/3 pt-6 p-10">
             <h1 className="text-4xl font-serif font-extrabold mb-4 text-center text-teal-700">WhiskAway</h1>
             <p className="text-center text-gray-700 font-serif mb-8 border-b pb-4 mx-12">Create your free account to start finding great recipes!</p>
 
@@ -122,19 +122,7 @@ function SignUp({ onSignUp }) {
                   />
                 </div>
               </div>
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="bio" className="block text-gray-700 font-serif mb-1">Bio</label>
-                  <input
-                    id="bio"
-                    type="text"
-                    placeholder="Write about yourself..."
-                    value={bio}
-                    onChange={e => setBio(e.target.value)}
-                    className="w-full px-4 py-2 border font-serif text-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300"
-                  />
-                </div>
-                <div>
+              <div>
                   <p className="text-gray-700 font-serif mb-2">Select dietary intolerances</p>
                   <Select
                     isMulti
@@ -171,8 +159,25 @@ function SignUp({ onSignUp }) {
                     className="text-sm"
                   />
                 </div>
+                <div className="space-y-4">
+                <div>
+                  <label htmlFor="bio" className="block text-gray-700 font-serif mb-1">
+                    Bio
+                  </label>
+                  <input
+                    id="bio"
+                    type="text"
+                    placeholder="Write about yourself..."
+                    value={bio}
+                    maxLength={60}
+                    onChange={e => setBio(e.target.value)}
+                    className="w-full px-4 py-2 border font-serif text-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {bio.length}/60 characters
+                  </p>
+                </div>
               </div>
-
               <button
                 type="submit"
                 className="w-full py-3 font-serif bg-teal-500 text-white font-semibold rounded-full hover:bg-teal-400 transition-transform transform hover:scale-105 duration-300"

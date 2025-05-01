@@ -1039,25 +1039,28 @@ app2.delete('/recipes/:id', verifyToken, async (req, res) => {
 //Commenting on user recipes.
 app2.post('/recipes/:id/comments', verifyToken, async (req, res) => {
   const { text } = req.body;
-  const { id } = req.params;
+  const { id }   = req.params;
 
   try {
     const user = await User.findById(req.userId).populate('userInfo');
-
     const comment = await Comment.create({
       recipeId: id,
-      userId: user.userInfo._id,
-      username: user.username,
+      userId:     user.userInfo._id,
+      username:   user.username,
       text
     });
 
-    const recipe = await Recipe.findById(id);
+    let recipe;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      recipe = await Recipe.findById(id);
+    }
 
-    if (recipe && recipe.isPublic) {
-      const ownerUser = await User.findById(recipe.owner).populate('userInfo');
+    if (recipe?.isPublic) {
+      const ownerUser   = await User.findById(recipe.owner).populate('userInfo');
       const ownerInfoId = ownerUser.userInfo._id.toString();
-    
-      if (ownerInfoId !== user.userInfo._id.toString()) {
+      const youId       = user.userInfo._id.toString();
+
+      if (ownerInfoId !== youId) {
         await createNotification(
           'recipe_comment',
           user.userInfo._id,
@@ -1066,6 +1069,7 @@ app2.post('/recipes/:id/comments', verifyToken, async (req, res) => {
         );
       }
     }
+
     res.status(201).json(comment);
   } catch (err) {
     console.error("Failed to post comment:", err);

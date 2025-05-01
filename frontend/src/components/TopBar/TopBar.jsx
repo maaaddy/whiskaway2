@@ -198,7 +198,7 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
                 </span>
             </Link>
 
-            {loggedInUsername && showSearchBar && (
+            {showSearchBar && (
                 <div className="search-container" ref={filterRef}>
                     <input
                         type="text"
@@ -248,7 +248,7 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
                 </div>
             )}
 
-            {loggedInUsername && showUserSearchBar && (
+            {showUserSearchBar && (
                 <div className="search-container">
                     <input
                         type="text"
@@ -279,7 +279,7 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
                 </div>
             )}
 
-            {loggedInUsername && showRecipeSearchBar && (
+            {showRecipeSearchBar && (
                 <div className="search-container">
                     <input
                         type="text"
@@ -293,7 +293,7 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
             )}
 
             <div className="flex items-center space-x-5 text-teal-700 flex-shrink-0">
-            {loggedInUsername ? (
+            
                 <>
                 <Link to="/about" className="hover:text-gray-700 transition">
                     <FontAwesomeIcon icon={faCog} size="lg" />
@@ -329,28 +329,6 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
                     <FontAwesomeIcon icon={faSignOutAlt} size="lg" />
                 </button>
                 </>
-            ) : (
-                <>
-                <Link
-                    to="/"
-                    className="px-4 py-2 text-teal-700 font-thin rounded-full justify-center"
-                >
-                    About Us
-                </Link>
-                <Link
-                    to="/login"
-                    className="px-4 py-2 bg-teal-100 text-teal-700 font-semibold hover:bg-teal-200 rounded-full"
-                >
-                    Log In
-                </Link>
-                <Link
-                    to="/signup"
-                    className="px-4 py-2 bg-teal-700 text-white font-semibold rounded-full hover:bg-teal-600"
-                >
-                    Sign Up
-                </Link>
-                </>
-            )}
             </div>
         </div>
     );

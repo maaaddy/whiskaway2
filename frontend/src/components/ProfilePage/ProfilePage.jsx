@@ -260,9 +260,9 @@ function ProfilePage() {
       return (
         <button
           onClick={handleClick}
-          className={`text-2xl px-2 py-1 mr-2 rounded-full transition ${
+          className={`text-2xl px-2 py-1 mr-2 rounded-md transition text-teal-700 ${
             show
-              ? 'bg-white shadow hover:bg-gray-100'
+              ? 'bg-[#f2faf9] hover:bg-teal-600/5'
               : 'opacity-0 pointer-events-none'
           }`}
         >
@@ -285,9 +285,9 @@ function ProfilePage() {
       return (
         <button
           onClick={handleClick}
-          className={`text-2xl px-2 py-1 ml-2 rounded-full transition ${
+          className={`text-2xl px-2 py-1 ml-2 rounded-md transition text-teal-700 ${
             show
-              ? 'bg-white shadow hover:bg-gray-100'
+              ? 'bg-[#f2faf9] hover:bg-teal-600/5'
               : 'opacity-0 pointer-events-none'
           }`}
         >
@@ -304,7 +304,7 @@ function ProfilePage() {
     }
     
     return (
-        <div className="pt-12 profile-page">
+        <div className="pt-12 pb-10 profile-page">
           <div className="relative w-10/12 h-80 mb-52 rounded-lg">
           {loading ? (
             <div className="absolute inset-0 w-full h-full bg-gray-200 animate-pulse rounded-lg z-0" />
@@ -558,7 +558,7 @@ function ProfilePage() {
               ))}
             </div>
           ) : items.length > 0 ? (
-            <ScrollMenu LeftArrow={<LeftArrow show={showArrows} />} RightArrow={<RightArrow show={showArrows} />}>
+            <ScrollMenu LeftArrow={<LeftArrow show={showArrows} />} RightArrow={<RightArrow show={showArrows}/>}>
               {items.map((item) => (
                 <div
                   key={item._id}
@@ -580,7 +580,7 @@ function ProfilePage() {
                       alt={item.title}
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-black/70 text-white text-sm font-semibold px-3 py-1 rounded-full">
+                    <div className="absolute top-1/4 left-1/2 transform -translate-x-1/2 bg-black/70 text-white text-sm font-semibold px-3 py-2 rounded-xl">
                       {item.title}
                     </div>
                   </Link>

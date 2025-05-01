@@ -125,10 +125,10 @@ const SettingsPage = () => {
   };
 
   return (
-    <div className="flex pt-16 min-h-screen bg-white">
+    <div className="flex pt-12 min-h-screen font-serif">
       <Toaster position='top-right' />
 
-      <div className="flex flex-col gap-2 w-64 px-4 pt-4 shadow-md">
+      <div className="flex flex-col gap-2 w-64 px-4 pt-4 shadow-md bg-white">
         {[
           { key: 'username', label: 'Change Username' },
           { key: 'password', label: 'Change Password' },
@@ -152,7 +152,7 @@ const SettingsPage = () => {
       <div className="flex-1 py-8 flex justify-start">
       <div className="w-full max-w-6xl px-10">
         <div className="w-full max-w-xl space-y-6">
-          <h1 className="text-2xl font-bold text-gray-800">
+          <h1 className="text-2xl font-bold text-teal-800">
             {activeTab === 'username' && 'Change Username'}
             {activeTab === 'password' && 'Change Password'}
             {activeTab === 'intolerances' && 'Update Allergies'}
@@ -270,7 +270,7 @@ const SettingsPage = () => {
 
               {intolerances.length > 0 ? (
                 <>
-                  <h3 className="text-2xl font-bold text-gray-800 pt-6 border-t-2">Current Allergies</h3>
+                  <h3 className="text-2xl font-bold text-teal-800 pt-6 border-t-2">Current Allergies:</h3>
                   <div className="flex flex-wrap gap-2 pt-1">
                     {intolerances.map(item => (
                       <span
