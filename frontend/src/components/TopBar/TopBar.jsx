@@ -99,7 +99,7 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
     const location = useLocation();
     const showSearchBar = location.pathname === "/";
     const showUserSearchBar = location.pathname.startsWith("/profile");
-    const showRecipeSearchBar = location.pathname.startsWith("/add-recipe");
+    const showRecipeSearchBar = location.pathname.startsWith("/add-recipe2");
 
     const [userSearchQuery, setUserSearchQuery] = useState("");
     const [recipeSearchQuery, setRecipeSearchQuery] = useState("");

@@ -13,7 +13,8 @@ function Login({ onLogin }) {
     try {
       const { data } = await axios.post('/api/login', { username, password });
       if (data.error) {
-        console.log(data.error);
+        alert('Invalid credentials. Please try again.');
+        return;
       } else {
         setUsername('');
         setPassword('');
@@ -22,7 +23,7 @@ function Login({ onLogin }) {
         navigate('/home');
       }
     } catch (error) {
-      console.error('Error logging in:', error);
+      alert('Invalid credentials. Please try again.');
     }
   };
 

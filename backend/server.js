@@ -567,7 +567,7 @@ app2.post('/cookbook/:id/addRecipe', verifyToken, async (req, res) => {
     }
 
     if (cookbook.recipes.includes(recipeId)) {
-      return res.status(400).json({ error: 'Recipe already in the cookbook' });
+      return res.status(409).json({ error: 'Recipe already in the cookbook' });
     }
     cookbook.recipes.push(recipeId);
     await cookbook.save();
@@ -857,6 +857,16 @@ app2.post('/messages', verifyToken, async (req, res) => {
   } catch (err) {
     console.error("Error sending message:", err);
     res.status(500).json({ error: 'Error sending message' });
+  }
+});
+
+app2.get('/users/:id', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('username');
+    if (!user) return res.status(404).json({ error: 'Not found' });
+    res.json({ username: user.username });
+  } catch (e) {
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

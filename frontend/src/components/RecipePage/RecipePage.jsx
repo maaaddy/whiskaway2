@@ -208,6 +208,19 @@ function CreatePage() {
     useEffect(() => {
       fetchUserRecipes();
     }, []);
+
+    useEffect(() => {
+      async function fetchCookbooks() {
+        try {
+          const res = await axios.get('/api/cookbook');
+          setCookbooks(res.data);
+        } catch (err) {
+          console.error('Failed to fetch cookbooks:', err);
+        }
+      }
+      fetchCookbooks();
+    }, []);
+    
   
     return (
       <div className="p-6 max-w-5xl mx-auto py-16 relative">
@@ -293,9 +306,10 @@ function CreatePage() {
         
         {showModal && !selectedId && (
           <Modal onClose={() => setShowModal(false)}>
-            <div className="max-w-4xl mx-auto p-6">
-              <h2 className="text-3xl font-bold mb-6 text-center">New Recipe</h2>
-              <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="max-w-4xl mx-auto p-6 font-serif">
+              <h2 className="text-2xl font-bold text-center font-serif text-teal-800 mb-6">Create a New Recipe</h2>
+              <form onSubmit={handleSubmit} className="space-y-6 text-gray-700">
+                Title*
                 <input
                   type="text"
                   value={title}
@@ -330,22 +344,22 @@ function CreatePage() {
                 </div>
     
                 <div>
-                  <label className="font-semibold block mb-1">Ingredients</label>
+                  <label className="block mb-1">Ingredients*</label>
                   {ingredients.map((item, idx) => (
                     <input
                       key={idx}
                       value={item}
                       onChange={e => handleIngredientChange(idx, e.target.value)}
-                      className="w-full mb-2 border p-2 rounded"
+                      className="w-full mb-2 border p-2 rounded text-gray-700"
                     />
                   ))}
-                  <button type="button" onClick={addIngredient} className="text-blue-600 text-sm">
+                  <button type="button" onClick={addIngredient} className="text-teal-600 text-sm">
                     + Add Ingredient
                   </button>
                 </div>
     
                 <div>
-                  <label className="font-semibold block mb-1">Instructions</label>
+                  <label className="block mb-1 text-gray-700">Instructions</label>
                   {instructions.map((step, idx) => (
                     <textarea
                       key={idx}
@@ -355,14 +369,14 @@ function CreatePage() {
                       rows="2"
                     />
                   ))}
-                  <button type="button" onClick={addInstruction} className="text-blue-600 text-sm">
+                  <button type="button" onClick={addInstruction} className="text-teal-600 text-sm">
                     + Add Step
                   </button>
                 </div>
     
                 <div className="space-y-4">
                   <div>
-                    <label className="font-semibold block mb-2">Meal Type</label>
+                    <label className="block mb-2 text-gray-700">Meal Type</label>
                     <Select
                       isMulti
                       options={mealTypeOptions}
@@ -371,7 +385,7 @@ function CreatePage() {
                     />
                   </div>
                   <div>
-                    <label className="font-semibold block mb-2">Cuisine</label>
+                    <label className="block mb-2 text-gray-700">Cuisine</label>
                     <Select
                       isMulti
                       options={cuisineOptions}
@@ -380,7 +394,7 @@ function CreatePage() {
                     />
                   </div>
                   <div>
-                    <label className="font-semibold block mb-2">Diet</label>
+                    <label className="block mb-2 text-gray-700">Diet</label>
                     <Select
                       isMulti
                       options={dietOptions}
@@ -389,7 +403,7 @@ function CreatePage() {
                     />
                   </div>
                   <div>
-                    <label className="font-semibold block mb-2">Intolerances</label>
+                    <label className="block mb-2 text-gray-700">Intolerances</label>
                     <Select
                       isMulti
                       options={intoleranceOptions}
@@ -400,11 +414,11 @@ function CreatePage() {
                 </div>
     
                 <div>
-                  <label className="block font-medium mb-1">Add to Cookbook</label>
+                  <label className="block font-medium mb-1 text-gray-700">Add to Cookbook</label>
                   <select
                     value={cookbookId}
                     onChange={e => setCookbookId(e.target.value)}
-                    className="w-full border p-2 rounded"
+                    className="w-full border p-2 rounded text-gray-700"
                   >
                     <option value="">Select a Cookbook</option>
                     {cookbooks.map(cb => (
@@ -413,19 +427,20 @@ function CreatePage() {
                   </select>
                 </div>
     
-                <div>
-                  <label className="block font-medium mb-1">Visibility</label>
-                  <label className="inline-flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={isPublic}
-                      onChange={() => setIsPublic(!isPublic)}
-                      className="mr-2"
-                    />
-                    {isPublic ? 'Public' : 'Private'}
-                  </label>
+                <div className="flex items-center justify-between font-serif">
+                  <label className="text-gray-700 font-medium">Privacy</label>
+                    <button
+                      type="button"
+                      onClick={() => setIsPublic(!isPublic)}
+                      className="flex items-center text-gray-700 hover:text-gray-900 transition"
+                    >
+                      {isPublic ? <FaLockOpen size={22} className="mr-2" /> : <FaLock size={22} className="mr-2" />}
+                      {isPublic ? 'Public' : 'Private'}
+                    </button>
                 </div>
-                <div className="mb-4">
+                <p className='mb-6 font-serif font-thin text-sm text-gray-600'>Public recipes appear on your profile.</p>
+                <p>Recipe Photo*</p>
+                <label htmlFor="recipe-image-upload" className="mb-4 block cursor-pointer">
                   {image ? (
                     <img
                       src={image}
@@ -433,13 +448,18 @@ function CreatePage() {
                       className="w-52 h-64 object-cover rounded-lg border border-gray-300"
                     />
                   ) : (
-                    <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500">
-                      Preview will appear here
+                    <div className="w-52 h-64 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500">
+                      Click to select a photo
                     </div>
                   )}
-                </div>
-                <input type="file" onChange={handleImageUpload} className="w-full" />
-    
+                </label>
+                <input
+                  id="recipe-image-upload"
+                  type="file"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+            
                 <button
                   type="submit"
                   disabled={isSubmitting}

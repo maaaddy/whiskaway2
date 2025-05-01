@@ -28,6 +28,26 @@ const SkeletonMessage = ({ alignment = 'left', delay = 0 }) => (
   </div>
 );
 
+const linkify = (text) => {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  return text.split(urlRegex).map((part, i) => {
+    if (part.match(urlRegex)) {
+      return (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block break-all text-blue-300 underline mt-1"
+        >
+          {part}
+        </a>
+      );
+    }
+    return <span key={i}>{part}</span>;
+  });
+};
+
 function ChatPage({ closeChat, initialUserId }) {
   const [userInfoId, setUserInfoId] = useState(null);
   const [friends, setFriends] = useState([]);
@@ -116,6 +136,7 @@ function ChatPage({ closeChat, initialUserId }) {
       const res = await axios.post('/api/messages', { recipient, text: newMessage });
       setMessages(prev => [...prev, res.data]);
       setNewMessage('');
+      sessionStorage.removeItem('sendRecipeLink');
       await fetchFriends();
     } catch (err) {
       console.error("Error sending message:", err.response?.data || err.message);
@@ -140,17 +161,17 @@ function ChatPage({ closeChat, initialUserId }) {
           <div className="pt-3 px-4 flex items-center justify-between">
             {showNewMessage ? (
               <>
-                <button onClick={() => setShowNewMessage(false)} className="text-blue-500">
+                <button onClick={() => setShowNewMessage(false)} className="text-gray-500">
                   <FontAwesomeIcon icon={faAngleLeft} size="lg" />
                 </button>
-                <span className="font-semibold">New Message</span>
+                <span className="font-semibold font-serif text-teal-800">New Message</span>
                 <button onClick={closeChat} className="text-gray-500">
                   <FontAwesomeIcon icon={faMinus} />
                 </button>
               </>
             ) : (
               <>
-                <span className="font-semibold text-teal-900">Messages</span>
+                <span className="font-semibold font-serif text-teal-800">Messages</span>
                 <div className="flex items-center gap-3">
                   <button onClick={() => setShowNewMessage(true)} className="text-teal-600">
                     <FontAwesomeIcon icon={faPenToSquare} size="md" />
@@ -172,50 +193,80 @@ function ChatPage({ closeChat, initialUserId }) {
             />
           </div>
           <div className="overflow-y-auto flex-1">
-            {loadingFriends
-              ? Array.from({ length: 5 }).map((_, i) => <SkeletonFriend key={i} delay={i*100} />)
-              : filteredFriends.map(user => (
-                  <div
-                    key={user._id}
-                    onClick={() => { setSelectedUser(user); setShowNewMessage(false); }}
-                    className="p-3 cursor-pointer hover:bg-gray-50 hover:rounded-xl border-x-4 border-white"
-                  >
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={user.profilePic || '/user.png'}
-                        alt={user.username}
-                        className="w-8 h-8 rounded-full object-cover"
-                      />
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium">{user.username}</span>
-                        <span className="text-xs text-gray-400 truncate w-40">
-                          {user.latestMessage?.text || 'Start a chat!'}
-                        </span>
-                      </div>
+            {loadingFriends ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <SkeletonFriend key={i} delay={i * 100} />
+              ))
+            ) : filteredFriends.length > 0 ? (
+              filteredFriends.map(user => (
+                <div
+                  key={user._id}
+                  onClick={() => {
+                    setSelectedUser(user);
+                    setShowNewMessage(false);
+                  }}
+                  className="p-3 cursor-pointer hover:bg-gray-50 hover:rounded-xl border-x-4 border-white"
+                >
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={user.profilePic || '/user.png'}
+                      alt={user.username}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">{user.username}</span>
+                      <span className="text-xs text-gray-400 truncate w-40">
+                        {user.latestMessage?.text || 'Start a chat!'}
+                      </span>
                     </div>
                   </div>
-                ))}
+                </div>
+              ))
+            ) : !showNewMessage ? (
+              <div className="p-4 pt-20 text-center text-sm text-gray-500">
+                <p>You haven’t started any chats yet.</p>
+                <p>
+                  Click{' '}
+                  <button
+                    type="button"
+                    onClick={() => setShowNewMessage(true)}
+                    className="text-teal-600 ml-1 focus:outline-none"
+                    aria-label="Start a new chat"
+                  >
+                    <FontAwesomeIcon icon={faPenToSquare} size="md" />
+                  </button>{' '}
+                  to begin a conversation.
+                </p>
+              </div>
+            ) : 
+        <div className="p-4 pt-12 text-center font-serif text-sm text-gray-500">
+            <p>
+              Click below to add more friends.
+            </p>
           </div>
+        }
+      </div>
           <div className="p-3 border-t text-center">
-            <a href="/profile" className="text-xs text-gray-400 hover:underline"></a>
+            <a href="/profile" className="text-xs text-teal-600 hover:underline">
+            Add Friends</a>
           </div>
         </>
       ) : (
         <>
-          <div className="p-3 border-b bg-white shadow-sm flex items-center justify-between">
+          <div className="p-2 border-b bg-white shadow-sm flex items-center justify-between">
             <div className="flex items-center gap-2">
               <button onClick={() => {
                 setSelectedUser(null);
                 fetchFriends();
               }}>
-                <FontAwesomeIcon icon={faAngleLeft} size="lg" className="text-teal-600" />
+                <FontAwesomeIcon icon={faAngleLeft} size="lg" className="text-gray-500" />
               </button>
               <img
                 src={selectedUser.profilePic || '/user.png'}
                 alt={selectedUser.username}
                 className="w-8 h-8 rounded-full object-cover"
               />
-              <span className="font-semibold text-sm">
+              <span className="font-semibold text-sm font-serif text-teal-800">
                 {selectedUser.fName ? `${selectedUser.fName} ${selectedUser.lName}` : selectedUser.username}
               </span>
             </div>
@@ -237,7 +288,7 @@ function ChatPage({ closeChat, initialUserId }) {
                     return (
                       <div key={msg._id} className={`flex my-2 ${isOwn ? 'justify-end' : 'justify-start'}`}>
                         <div className={`py-2 pl-3 pr-3 rounded-3xl text-sm max-w-xs ${isOwn ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}>
-                          <div>{msg.text}</div>
+                          <div>{linkify(msg.text)}</div>
                           <div className={`text-xs mt-1 ${isOwn ? 'text-slate-300' : 'text-gray-400'}`}>{time}</div>
                         </div>
                       </div>

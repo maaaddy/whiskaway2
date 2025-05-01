@@ -5,6 +5,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faPaperPlane, faBlender, faListOl, faSeedling, faBookMedical, faComment, faAngleDown, faAngleUp } from "@fortawesome/free-solid-svg-icons";
 import { faHeart as heartSolid } from "@fortawesome/free-solid-svg-icons";
 import { faHeart as heartOutline } from "@fortawesome/free-regular-svg-icons";
+import Modal from '../Modal';
+import { FaExclamationTriangle } from 'react-icons/fa';
 
 function RecipeDetailPage({ recipeId }) {
     const [recipe, setRecipe] = useState(null);
@@ -26,6 +28,12 @@ function RecipeDetailPage({ recipeId }) {
     const [showMoreNutrition, setShowMoreNutrition] = useState(false);
     const [showFriendList, setShowFriendList] = useState(false);
     const { id: routeId } = useParams();
+    const [showModal, setShowModal]             = useState(false);
+    const [selectedRecipeId, setSelectedRecipeId] = useState(null);
+    const [intolerances, setIntolerances]     = useState([]);
+    const [intolerancesLoading, setIntolerancesLoading] = useState(true);
+    const [allergenMatches, setAllergenMatches] = useState([]);
+    
     const id = recipeId || routeId;
     const API_KEY = process.env.REACT_APP_API_KEY;
     const MAX_COMMENT_LENGTH = 150;
@@ -40,9 +48,29 @@ function RecipeDetailPage({ recipeId }) {
           console.error("Failed to fetch comments:", err);
         }
     };      
+
+    const capitalize = str =>
+        str
+          .split(' ')
+          .map(s => s.charAt(0).toUpperCase() + s.slice(1))
+          .join(' ');
     
     useEffect(() => {
         if (!id) return;
+
+        const fetchUserIntolerances = async () => {
+            setIntolerancesLoading(true);
+            try {
+            const profileRes = await axios.get('/api/profile');
+            setIntolerances(profileRes.data.intolerances || []);
+            } catch (err) {
+            console.error("Failed to fetch user intolerances:", err);
+            } finally {
+            setIntolerancesLoading(false);
+            }
+        };
+
+        fetchUserIntolerances();
 
         const fetchFriends = async () => {
             try {
@@ -147,26 +175,32 @@ function RecipeDetailPage({ recipeId }) {
 
     const handleAddToCookbook = async () => {
         if (!selectedCookbook) {
-            alert('Please select a cookbook!');
-            return;
+          alert('Please select a cookbook!');
+          return;
         }
-
+      
         try {
-            await axios.post(`/api/cookbook/${selectedCookbook}/addRecipe`, {
-                recipeId: id,
-            });
-            localStorage.removeItem(`cookbook_${selectedCookbook}`);
-            alert('Recipe added to cookbook successfully!');
+          await axios.post(`/api/cookbook/${selectedCookbook}/addRecipe`, {
+            recipeId: id,
+          });
+          localStorage.removeItem(`cookbook_${selectedCookbook}`);
+          alert('Recipe added to cookbook successfully!');
         } catch (err) {
-            console.error('Error adding recipe to cookbook:', err);
-            alert('Failed to add recipe to cookbook');
+          console.error('Error adding recipe to cookbook:', err);
+          const resp = err.response;
+          if (resp?.status === 409 || resp?.data?.error?.toLowerCase().includes('already')) {
+            alert('This recipe is already in the cookbook.');
+          } else {
+            alert('Failed to add recipe to cookbook.');
+          }
         }
-    };
+      };      
 
-    const handleCopyLink = () => {
-        navigator.clipboard.writeText(window.location.href);
+      const handleCopyLink = () => {
+        const shareUrl = `${window.location.origin}/recipe/${id}`;
+        navigator.clipboard.writeText(shareUrl);
         alert('Link copied to clipboard!');
-    };
+      };
 
     const handleCommentSubmit = async () => {
         if (!newComment.trim() || newComment.length < 3) {
@@ -193,6 +227,33 @@ function RecipeDetailPage({ recipeId }) {
           console.error("Failed to toggle like:", err);
         }
       };
+
+      useEffect(() => {
+        if (!recipe || intolerances.length === 0) return;
+        const ingredientTexts = Array.isArray(recipe.extendedIngredients)
+          ? recipe.extendedIngredients.map(i => (i.original || i.name).toLowerCase())
+          : Array.isArray(recipe.ingredients)
+            ? recipe.ingredients.map(item =>
+                (typeof item === 'string' ? item : item.name || '').toLowerCase()
+              )
+            : [];
+      
+        const matches = intolerances.reduce((acc, intol) => {
+          const key = intol.toLowerCase();
+      
+          if (key === 'dairy' && recipe.dairyFree === false) {
+            acc.push(capitalize(key));
+          } else if (key === 'gluten' && recipe.glutenFree === false) {
+            acc.push(capitalize(key));
+          }
+          else if (ingredientTexts.some(text => text.includes(key))) {
+            acc.push(capitalize(key));
+          }
+          return acc;
+        }, []);
+      
+        setAllergenMatches([...new Set(matches)]);
+      }, [recipe, intolerances]);
       
     if (!recipe) {
         return (
@@ -214,18 +275,34 @@ function RecipeDetailPage({ recipeId }) {
 
     return (
         <div className="pt-8 max-w-4xl mx-auto px-4 pb-20">
-            <div className="w-full mb-6">
-            <img
-            src={
-                recipe.extendedIngredients
-                ? recipe.image
-                : recipe.image
-                    ? `data:image/jpeg;base64,${recipe.image}`
-                    : '/placeholder.jpg'
-            }
-            alt={recipe.title}
-            className="w-full max-h-[500px] object-contain rounded-xl shadow bg-white"
-            />
+            <div className="w-full mb-6 relative">
+                <img
+                    src={
+                        recipe.extendedIngredients
+                        ? recipe.image
+                        : recipe.image
+                            ? `data:image/jpeg;base64,${recipe.image}`
+                            : '/placeholder.jpg'
+                    }
+                    alt={recipe.title}
+                    className="w-full max-h-[500px] object-contain rounded-xl shadow bg-white"
+                />
+
+                {intolerancesLoading && (
+                    <div className="absolute top-2 left-2 bg-yellow-600 bg-opacity-75 text-white text-sm px-3 py-1 rounded">
+                    Loading intolerances…
+                    </div>
+                )}
+
+                {allergenMatches.length > 0 && (
+                <div className="absolute top-2 left-2 flex items-center bg-red-600 bg-opacity-75 text-white text-sm px-3 py-1 rounded max-w-[90%] break-words">
+                <FaExclamationTriangle className="mr-1 inline-block" />
+                <span>
+                  <strong>Contains:</strong> {allergenMatches.join(', ')}.
+                </span>
+              </div>
+              
+                )}
 
             </div>
 
@@ -330,30 +407,32 @@ function RecipeDetailPage({ recipeId }) {
                         )}
                     </div>
                     {showFriendList && (
-                        <div className="absolute top-full mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg z-20">
+                    <div className="absolute top-full mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg z-20">
                         <div className="px-4 py-2 text-sm font-medium text-gray-700 border-b">
-                            Select a friend
+                        Select a friend
                         </div>
                         {friends.length > 0 ? (
-                            friends.map((friend) => (
+                        friends.map((friend) => (
                             <button
-                                key={friend._id}
-                                onClick={() => {
-                                sessionStorage.setItem('sendRecipeLink', window.location.href);
-                                window.dispatchEvent(new CustomEvent('openChat', {
-                                    detail: { userId: friend._id }
-                                }));
+                            key={friend._id}
+                            onClick={() => {
+                                const shareUrl = `${window.location.origin}/recipe/${id}`;
+                                sessionStorage.setItem('sendRecipeLink', shareUrl);
+
+                                window.dispatchEvent(
+                                new CustomEvent('openChat', { detail: { userId: friend._id } })
+                                );
                                 setShowFriendList(false);
-                                }}
-                                className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm"
+                            }}
+                            className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm"
                             >
-                                💬 {friend.username}
+                            💬 {friend.username}
                             </button>
-                            ))
+                        ))
                         ) : (
-                            <div className="px-4 py-2 text-sm text-gray-500">No friends found</div>
+                        <div className="px-4 py-2 text-sm text-gray-500">No friends found</div>
                         )}
-                        </div>
+                    </div>
                     )}
                 </div>
             </div>
