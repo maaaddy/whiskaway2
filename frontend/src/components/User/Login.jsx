@@ -15,13 +15,14 @@ function Login({ onLogin }) {
       if (data.error) {
         alert('Invalid credentials. Please try again.');
         return;
-      } else {
-        setUsername('');
-        setPassword('');
-        localStorage.setItem('token', data.token);
-        onLogin();
-        navigate('/home');
       }
+
+      const { token, username: returnedUsername, isAdmin } = data;
+      localStorage.setItem('token', token);
+      onLogin({ username: returnedUsername, isAdmin });
+      setUsername('');
+      setPassword('');
+      navigate(isAdmin ? '/admin' : '/home');
     } catch (error) {
       alert('Invalid credentials. Please try again.');
     }

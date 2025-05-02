@@ -66,12 +66,16 @@ export default function NotificationPanel({ userInfoId, show, onClose }) {
   };
 
   const handleClearAll = async () => {
-    const unread = notifications.filter(n => !n.read);
-    await Promise.all(unread.map(n => markAsRead(n._id)));
-    setLocalNotifications([]);
-    fetchNotifications();
+    try {
+      await axios.delete(`/api/notifications/${userInfoId}`);
+      setLocalNotifications([]);
+      setDismissedIds([]);
+      fetchNotifications();
+    } catch (err) {
+      console.error('Failed to clear notifications:', err);
+    }
   };
-
+  
   const handleFriendAction = async (notif, action) => {
     try {
       const endpoint = action === 'accept'

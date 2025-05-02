@@ -185,6 +185,7 @@ app2.get('/profile/:username?', async (req, res) => {
           coverImage: coverImageBase64,
           friends: user.userInfo.friends.length,
           intolerances: user.userInfo.intolerances || [],
+          isAdmin: user.username === process.env.ADMIN,
         });
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -464,6 +465,46 @@ const verifyToken = (req, res, next) => {
     next();
   });
 };
+
+const requireAdmin = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(401).json({ error: 'Unauthorized' });
+    if (user.username !== process.env.ADMIN) {
+      return res.status(403).json({ error: 'Forbidden: Admins only' });
+    }
+    next();
+  } catch (err) {
+    console.error('Admin check error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+app2.use('/admin', verifyToken, requireAdmin);
+
+app2.get('/admin/users', async (req, res) => {
+  const { query } = req.query;
+  const filter = query ? { username: { $regex: query, $options: 'i' }} : {};
+  const users = await User.find(filter);
+  res.json(users);
+});
+
+app2.delete('/admin/users/:userId', async (req, res) => {
+  const { userId } = req.params;
+  await User.findByIdAndDelete(userId);
+  await Comment.deleteMany({ userId });
+  await Like.deleteMany({ userId });
+  res.json({ message: 'User removed' });
+});
+
+app2.get('/me', verifyToken, async (req, res) => {
+  const user = await User.findById(req.userId);
+  if (!user) return res.status(404).json({ error: 'No user' });
+  res.json({
+    username: user.username,
+    isAdmin: user.username === process.env.ADMIN
+  });
+});
 
 app2.post('/cookbook', verifyToken, async (req, res) => {
   const { title, isPublic, coverImage } = req.body;
@@ -1447,6 +1488,16 @@ app2.put('/notifications/:id/read', async (req, res) => {
   } catch (err) {
     console.error("Notification read error:", err);
     res.status(500).json({ error: "Could not update notification" });
+  }
+});
+
+app2.delete('/notifications/:userInfoId', async (req, res) => {
+  try {
+    await Notification.deleteMany({ toUser: req.params.userInfoId });
+    res.json({ message: 'Notifications cleared' });
+  } catch (err) {
+    console.error("Error clearing notifications:", err);
+    res.status(500).json({ error: "Could not clear notifications" });
   }
 });
 

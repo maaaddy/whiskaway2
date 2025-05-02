@@ -15,6 +15,12 @@ const SkeletonCard = ({ delay = 0 }) => (
   </div>
 );
 
+const isValidImage = (image) => {
+  if (!image) return false;
+  if (image.startsWith('data:')) return true;
+  return /\.(jpe?g|png|gif|bmp|webp)$/i.test(image);
+};
+
 function HomePage({ searchQuery, recipeFilter }) {
   const [spoonacularRecipes, setSpoonacularRecipes] = useState([]);
   const [userRecipes, setUserRecipes] = useState([]);
@@ -46,8 +52,9 @@ function HomePage({ searchQuery, recipeFilter }) {
     setUserLoading(true);
     axios.get('/api/public-recipes', { withCredentials: false, headers: { 'Accept': 'application/json' } })
       .then(res => {
-        setUserRecipes(res.data);
-        setFilteredUserRecipes(applyUserFilters(res.data));
+        const validUsers = res.data.filter(r => isValidImage(r.image));
+     setUserRecipes(validUsers);
+     setFilteredUserRecipes(applyUserFilters(validUsers));
       })
       .catch(err => console.error('Error fetching public recipes:', err))
       .finally(() => setUserLoading(false));
@@ -96,7 +103,7 @@ function HomePage({ searchQuery, recipeFilter }) {
           }
         }
         
-        results = results.filter(r => r.image && r.image.length > 0);
+        results = results.filter(r => isValidImage(r.image));
         setSpoonacularRecipes(prev => page === 1 ? results : [...prev, ...results]);
       } catch (err) {
         console.error('Error fetching Spoonacular:', err);

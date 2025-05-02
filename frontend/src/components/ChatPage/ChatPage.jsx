@@ -64,6 +64,11 @@ function ChatPage({ closeChat, initialUserId }) {
   const messagedFriends = friends.filter(f => f.latestMessage);
   const unmessagedFriends = friends.filter(f => !f.latestMessage);
 
+  useEffect(() => {
+    localStorage.setItem('lastChatViewed', Date.now().toString());
+    window.dispatchEvent(new Event('chatOpened'));
+  }, []);
+
   const fetchFriends = async () => {
     setLoadingFriends(true);
     try {
@@ -207,7 +212,7 @@ function ChatPage({ closeChat, initialUserId }) {
                   }}
                   className="p-3 cursor-pointer hover:bg-gray-50 hover:rounded-xl border-x-4 border-white"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 text-teal-800">
                     <img
                       src={user.profilePic || '/user.png'}
                       alt={user.username}

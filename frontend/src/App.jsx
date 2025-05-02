@@ -3,7 +3,6 @@ import './App.css';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from './components/HomePage/HomePage';
 import RecipePage from './components/RecipePage/RecipePage';
-import About from './components/About';
 import ChatPage from './components/ChatPage/ChatPage';
 import CookbookPage from './components/CookbookPage/CookbookPage';
 import CookbookDetailPage from './components/CookbookDetailPage/CookbookDetailPage';
@@ -66,14 +65,13 @@ function App() {
                 <Routes>
                     {isLoggedIn ? ( 
                         <>
-                            <Route path="/admin/" element={<Ojofrdkcvbfzdubabiszbvfdjnbduipw />} />
+                            
                             <Route path="/" element={<HomePage searchQuery={searchQuery} recipeFilter={recipeFilter} />} />
                             <Route path="/recipe/:id" element={<RecipeDetailPage />} />
                             <Route path="/add-recipe" element={<RecipePage />} />
                             <Route path="/profile/:username?" element={<ProfilePage />} />
                             <Route path="/cookbook" element={<CookbookPage />} />
                             <Route path="/cookbook/:id" element={<CookbookDetailPage />} />
-                            <Route path="/about" element={<About />} />
                             <Route path="/notifications" element={<NotificationsPage />} />
                             <Route path="/settings" element={<SettingsPage />} />
                             <Route path="*" element={<Navigate to="/" />} />

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Select from 'react-select';
 import toast, { Toaster } from 'react-hot-toast';
+import { useSearchParams } from 'react-router-dom';
 
 const intoleranceOptions = [
   { value: 'dairy', label: 'Dairy' },
@@ -18,8 +19,17 @@ const intoleranceOptions = [
   { value: 'wheat', label: 'Wheat' }
 ];
 
+const tabKeys = ['username','password','friends','intolerances'];
+const getTabFromParam = (param) => {
+  if (param === 'manageFriends') return 'friends';
+  return tabKeys.includes(param) ? param : 'username';
+};
+
 const SettingsPage = () => {
-  const [activeTab, setActiveTab] = useState('username');
+  const [searchParams] = useSearchParams();
+  const initialTab = getTabFromParam(searchParams.get('tab'));
+  const [activeTab, setActiveTab] = useState(initialTab);
+
   const [username, setUsername] = useState('');
   const [newUsername, setNewUsername] = useState('');
   const [usernamePassword, setUsernamePassword] = useState('');
@@ -33,7 +43,7 @@ const SettingsPage = () => {
   const [loadingPwd, setLoadingPwd] = useState(false);
   const [loadingIntolerance, setLoadingIntolerance] = useState(false);
   const [loadingUsername, setLoadingUsername] = useState(true);
-  const [loadingFriends, setLoadingFriends] = useState(false);
+  const [loadingFriends, setLoadingFriends] = useState(true);
 
   useEffect(() => {
     axios.get('/api/profile')

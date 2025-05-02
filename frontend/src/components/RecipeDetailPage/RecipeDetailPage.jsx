@@ -229,24 +229,38 @@ function RecipeDetailPage({ recipeId }) {
       };
 
       useEffect(() => {
-        if (!recipe || intolerances.length === 0) return;
-        const ingredientTexts = Array.isArray(recipe.extendedIngredients)
-          ? recipe.extendedIngredients.map(i => (i.original || i.name).toLowerCase())
-          : Array.isArray(recipe.ingredients)
-            ? recipe.ingredients.map(item =>
-                (typeof item === 'string' ? item : item.name || '').toLowerCase()
-              )
-            : [];
+        if (!recipe || !Array.isArray(intolerances)) return;
+        if (intolerances.length === 0) {
+          setAllergenMatches([]);
+          return;
+        }
+      
+        const ingredientTexts = [];
+        if (Array.isArray(recipe.extendedIngredients)) {
+          recipe.extendedIngredients.forEach(i => {
+            const text = (i?.original || i?.name || '').toString();
+            ingredientTexts.push(text.toLowerCase());
+          });
+        } else if (Array.isArray(recipe.ingredients)) {
+          recipe.ingredients.forEach(item => {
+            const text = typeof item === 'string'
+              ? item
+              : (item?.name || '').toString();
+            ingredientTexts.push(text.toLowerCase());
+          });
+        }
       
         const matches = intolerances.reduce((acc, intol) => {
+          if (typeof intol !== 'string') return acc;
           const key = intol.toLowerCase();
+          const wordRegex = new RegExp(`\\b${key}\\b`);
       
           if (key === 'dairy' && recipe.dairyFree === false) {
             acc.push(capitalize(key));
           } else if (key === 'gluten' && recipe.glutenFree === false) {
             acc.push(capitalize(key));
           }
-          else if (ingredientTexts.some(text => text.includes(key))) {
+          else if (ingredientTexts.some(text => wordRegex.test(text))) {
             acc.push(capitalize(key));
           }
           return acc;
@@ -254,6 +268,7 @@ function RecipeDetailPage({ recipeId }) {
       
         setAllergenMatches([...new Set(matches)]);
       }, [recipe, intolerances]);
+      
       
     if (!recipe) {
         return (
@@ -274,7 +289,7 @@ function RecipeDetailPage({ recipeId }) {
         }
 
     return (
-        <div className="pt-8 max-w-4xl mx-auto px-4 pb-20">
+        <div className="pt-8 max-w-4xl mx-auto px-4 pb-20 font-serif">
             <div className="w-full mb-6 relative">
                 <img
                     src={
@@ -289,13 +304,13 @@ function RecipeDetailPage({ recipeId }) {
                 />
 
                 {intolerancesLoading && (
-                    <div className="absolute top-2 left-2 bg-yellow-600 bg-opacity-75 text-white text-sm px-3 py-1 rounded">
+                    <div className="absolute top-2 left-2 bg-yellow-600 bg-opacity-75 text-white text-sm px-3 mt-4 py-3 rounded">
                     Loading intolerances…
                     </div>
                 )}
 
                 {allergenMatches.length > 0 && (
-                <div className="absolute top-2 left-2 flex items-center bg-red-600 bg-opacity-75 text-white text-sm px-3 py-1 rounded max-w-[90%] break-words">
+                <div className="absolute top-2 left-2 flex items-center bg-red-600 bg-opacity-75 text-white text-sm px-3 mt-4 py-3 rounded max-w-[90%] break-words">
                 <FaExclamationTriangle className="mr-1 inline-block" />
                 <span>
                   <strong>Contains:</strong> {allergenMatches.join(', ')}.
@@ -558,8 +573,10 @@ function RecipeDetailPage({ recipeId }) {
                         <div key={comment._id} className="border-t pt-2">
                             <p className="text-sm text-gray-800 font-semibold flex items-center gap-1">
                             {comment.username}
-                            {comment.userId === recipe.owner && (
-                                <span className="ml-1 bg-teal-200 text-teal-800 text-xs font-semibold px-2 py-0.5 rounded">Author</span>
+                            {comment.username === recipe.owner?.username && (
+                                <span className="ml-1 bg-teal-200 text-teal-800 text-xs font-semibold px-2 py-0.5 rounded">
+                                Author
+                                </span>
                             )}
                             </p>
                             <p className="text-gray-700">{comment.text}</p>

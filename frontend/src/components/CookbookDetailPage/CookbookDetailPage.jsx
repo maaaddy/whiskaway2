@@ -7,6 +7,7 @@ import InviteModal from '../InviteModal/InviteModal';
 import { FaTrash } from 'react-icons/fa';
 import Modal from '../Modal';
 import RecipeDetailPage from '../RecipeDetailPage/RecipeDetailPage';
+import { jsPDF } from 'jspdf';
 
 const axiosInstance = axiosRateLimit(axios.create(), { maxRequests: 5, perMilliseconds: 1000 });
 
@@ -121,6 +122,130 @@ function CookbookDetailPage() {
     }
   };      
 
+  const downloadPdf = async () => {
+    const doc = new jsPDF('p', 'pt', 'a4');
+    doc.setFont('times', 'normal');
+    const margin = 40;
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    const logoWidth = 40;
+    const logoHeight = 40;
+    const headerHeight = logoHeight + 10;
+    const extraHeaderSpacing = 20;
+    const lineSpacing = 16;
+    const logoUrl = '/whiskaway.png';
+    const labelText = 'WhiskAway';
+    const urlText = 'https://whiskaway.food';
+    const fontSizeHeader = 14;
+  
+    const loadImage = url =>
+      new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.src = url;
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+      });
+    const img = await loadImage(logoUrl);
+  
+    const drawHeader = () => {
+      doc.setFontSize(fontSizeHeader);
+      const logoX = margin;
+      const logoY = margin - 5;
+      doc.addImage(img, 'PNG', logoX, logoY, logoWidth, logoHeight);
+  
+      const centerY = logoY + logoHeight / 2;
+      const textY = centerY + fontSizeHeader / 2 - 2;
+  
+      const labelX = logoX + logoWidth + 10;
+      doc.text(labelText, labelX, textY, { align: 'left' });
+  
+      const urlWidth = doc.getTextWidth(urlText);
+      const urlX = pageWidth - margin - urlWidth;
+      doc.text(urlText, urlX, textY, { align: 'left' });
+    };
+  
+    let y = margin + headerHeight + extraHeaderSpacing;
+    drawHeader();
+  
+    recipes.forEach((recipe, idx) => {
+      if (idx > 0) {
+        doc.addPage();
+        drawHeader();
+        y = margin + headerHeight + extraHeaderSpacing;
+      }
+  
+      if (y + 24 > pageHeight - margin) {
+        doc.addPage();
+        drawHeader();
+        y = margin + headerHeight + extraHeaderSpacing;
+      }
+      doc.setFont('times', 'bold');
+      doc.setFontSize(18);
+      doc.text(recipe.title, margin, y);
+      y += 24;
+  
+      doc.setFont('times', 'normal');
+      doc.setFontSize(14);
+      if (y + lineSpacing > pageHeight - margin) {
+        doc.addPage();
+        drawHeader();
+        y = margin + headerHeight + extraHeaderSpacing;
+      }
+      doc.text('Ingredients:', margin, y);
+      y += lineSpacing;
+
+      const ingredients = recipe.extendedIngredients
+        ? recipe.extendedIngredients.map(i => i.original)
+        : recipe.ingredients || [];
+      ingredients.forEach(lineText => {
+        const lines = doc.splitTextToSize(
+          `- ${lineText}`,
+          pageWidth - margin * 2
+        );
+        if (y + lines.length * lineSpacing > pageHeight - margin) {
+          doc.addPage();
+          drawHeader();
+          y = margin + headerHeight;
+        }
+        doc.text(lines, margin, y);
+        y += lines.length * lineSpacing;
+      });
+      y += lineSpacing;
+  
+      if (y + lineSpacing > pageHeight - margin) {
+        doc.addPage();
+        drawHeader();
+        y = margin + headerHeight;
+      }
+      doc.text('Directions:', margin, y);
+      y += lineSpacing;
+  
+      const steps = recipe.analyzedInstructions?.[0]?.steps
+        ? recipe.analyzedInstructions[0].steps.map(s => `${s.number}. ${s.step}`)
+        : (typeof recipe.instructions === 'string'
+            ? [recipe.instructions]
+            : recipe.instructions || []);
+      steps.forEach(stepText => {
+        const lines = doc.splitTextToSize(
+          stepText,
+          pageWidth - margin * 2
+        );
+        if (y + lines.length * lineSpacing > pageHeight - margin) {
+          doc.addPage();
+          drawHeader();
+          y = margin + headerHeight;
+        }
+        doc.text(lines, margin, y);
+        y += lines.length * lineSpacing;
+      });
+    });
+  
+    const fileName = `${cookbook?.title?.replace(/\s+/g, '_') || 'cookbook'}.pdf`;
+    doc.save(fileName);
+  };
+  
+
   return (
     <div className="back max-w-6xl mx-auto p-6 pb-20">
       <Toaster position='top-right' />
@@ -171,12 +296,19 @@ function CookbookDetailPage() {
         {isOwner && (
           <div className="text-gray-600 mb-2 text-sm">
           <button
-            className="mb-4 bg-teal-500 text-white px-4 py-2 rounded"
+            className="mb-4 bg-teal-500 hover:bg-teal-700 text-white px-4 py-2 mr-2 rounded"
             onClick={() => setInviteMode(true)}
           >
-            + Invite collaborator
+            + Add collaborator
+          </button>
+          <button
+            onClick={downloadPdf}
+            className="mb-6 bg-teal-500 hover:bg-teal-700 text-white px-4 py-2 ml-2 rounded"
+          >
+            Download PDF
           </button>
           </div>
+          
         )}
         {isOwner && inviteMode && (
           <InviteModal
@@ -198,7 +330,7 @@ function CookbookDetailPage() {
           </Link>
           </div>
         ) : (
-        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 border-t-2 pt-6">
+        <div id="cookbook-content" className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 border-t-2 pt-6">
           {recipes.length > 0 ? (
             recipes.map((recipe) => {
               if (!recipe || !recipe.title) return null;

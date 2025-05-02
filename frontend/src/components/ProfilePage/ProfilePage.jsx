@@ -181,6 +181,16 @@ function ProfilePage() {
             reader.readAsDataURL(file);
         }
     };
+
+    const handleCoverUpload = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUpdatedProfile(prev => ({ ...prev, coverImage: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    };    
     
     const handleSave = async () => {
         try {
@@ -308,79 +318,69 @@ function ProfilePage() {
           <div className="relative w-10/12 h-80 mb-52 rounded-lg">
           {loading ? (
             <div className="absolute inset-0 w-full h-full bg-gray-200 animate-pulse rounded-lg z-0" />
-          ) : userData?.coverImage ? (
+          ) : (
             <img
-              src={`${userData.coverImage}`}
+              src={
+                updatedProfile.coverImage
+                  ? updatedProfile.coverImage
+                  : userData?.coverImage
+                    ? userData.coverImage
+                    : '/cover_image.jpg'
+              }
               alt="Cover"
               className="absolute inset-0 w-full h-full object-cover object-[center_18%] rounded-lg z-0"
             />
-          ) : (
-            <img
-              src="/cover_image.jpg"
-              alt="Default Cover"
-              className="absolute inset-0 w-full h-full object-cover object-[center_18%] rounded-lg z-0"
-            />
           )}
+
+          {editMode && (
+            <>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleCoverUpload}
+                className="hidden"
+                id="cover-upload"
+              />
+              <label
+                htmlFor="cover-upload"
+                className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 text-white text-sm font-medium cursor-pointer hover:bg-black/40 transition rounded-lg"
+              >
+                Click to upload cover photo
+              </label>
+            </>
+          )}
+          <div className="absolute bottom-[-5rem] left-0 right-0 mx-auto max-w-6xl px-6 flex flex-col sm:flex-row items-center sm:items-end text-center sm:text-left gap-6">
+          <div className="w-44 h-44 min-h-44 min-w-44 rounded-full overflow-hidden border-4 border-white bg-white relative translate-y-36 sm:translate-y-0 z-30">
+            <img
+              src={
+                updatedProfile.profilePic
+                  ? updatedProfile.profilePic
+                  : userData?.profilePic
+                    ? `data:image/jpeg;base64,${userData.profilePic}`
+                    : '/user.png'
+              }
+              alt="Profile"
+              className="w-full h-full object-cover aspect-square rounded-full"
+            />
+
             {editMode && (
-                <>
+              <>
                 <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                        setUpdatedProfile((prev) => ({ ...prev, coverImage: reader.result }));
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                    }}
-                    className="hidden"
-                    id="cover-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  id="profile-pic-upload"
                 />
                 <label
-                    htmlFor="cover-upload"
-                    className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 text-white text-sm font-medium cursor-pointer hover:bg-black/40 transition"
+                  htmlFor="profile-pic-upload"
+                  className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-sm font-semibold cursor-pointer rounded-full"
                 >
-                    Click to upload cover photo
+                  Upload Photo
                 </label>
-                </>
+              </>
             )}
-          <div className="absolute bottom-[-5rem] left-0 right-0 mx-auto max-w-6xl px-6 flex flex-col sm:flex-row items-center sm:items-end text-center sm:text-left gap-6">
-            <div className="w-44 h-44 min-h-44 min-w-44 rounded-full overflow-hidden border-4 border-white bg-white relative translate-y-36 sm:translate-y-0 z-30">
-                {editMode ? (
-                  <>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                      id="profile-pic-upload"
-                    />
-
-                    <label htmlFor="profile-pic-upload">
-                      <img
-                        src={
-                          updatedProfile.profilePic
-                            ? `data:image/jpeg;base64,${updatedProfile.profilePic}`
-                            : userData?.profilePic
-                            ? `data:image/jpeg;base64,${userData.profilePic}`
-                            : '/user.png'
-                        }
-                        alt="Profile"
-                        className="w-full h-full object-cover aspect-square cursor-pointer rounded-full"
-                      />
-                    </label>
-                  </>
-                ) : (
-                  <img
-                    src={userData?.profilePic || '/user.png'}
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                  />
-                )}
-              </div>
+          </div>
               <div className="flex flex-col justify-end items-center sm:items-start h-44 relative translate-y-36 sm:translate-y-28 text-center sm:text-left">
                 {editMode ? (
                   <>
@@ -465,14 +465,23 @@ function ProfilePage() {
                       </p>
                     )}
                     <p className="text-gray-700 pt-1">
-                      {loading ? (
-                        <span className="inline-block h-4 w-24 bg-gray-200 rounded-lg animate-pulse" />
-                      ) : (
-                        loadingFriends
-                          ? '---'
-                          : `${friendCount} friend${friendCount === 1 ? '' : 's'}`
-                      )}
-                    </p>
+                    {loading ? (
+                      <span className="inline-block h-4 w-24 bg-gray-200 rounded-lg animate-pulse" />
+                    ) : loadingFriends ? (
+                      '---'
+                    ) : currentUser === userData?.username ? (
+                      <Link
+                        to="/settings?tab=manageFriends"
+                        className="text-teal-600 hover:underline"
+                      >
+                        {friendCount} friend{friendCount !== 1 ? 's' : ''}
+                      </Link>
+                    ) : (
+                      <span>
+                        {friendCount} friend{friendCount !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </p>
                     <div className="flex gap-3 mt-3">
                       <button
                         onClick={copyProfileLink}

@@ -31,7 +31,7 @@ function SignUp({ onSignUp }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const values = intolerances.map(i => i.value);
+      const values = intolerances;
       const { data } = await axios.post('/api/register', {
         username,
         password,

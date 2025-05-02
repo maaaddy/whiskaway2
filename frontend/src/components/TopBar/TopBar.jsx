@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import Select from "react-select";
 import { Link, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch, faBell, faCog, faSignOutAlt } from "@fortawesome/free-solid-svg-icons";
+import { faSearch, faBell, faCog, faSignOutAlt, faShield } from "@fortawesome/free-solid-svg-icons";
 import axios from 'axios';
 import NotificationPanel from "../NotificationsPage/NotificationsPage";
 import { useNotifications } from "../useNotifications";
@@ -295,10 +295,6 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
             <div className="flex items-center space-x-5 text-teal-700 flex-shrink-0">
             
                 <>
-                <Link to="/about" className="hover:text-gray-700 transition">
-                    <FontAwesomeIcon icon={faCog} size="lg" />
-                </Link>
-
                 <div className="relative">
                     <button
                     onClick={() => setShowNotifications(v => !v)}
