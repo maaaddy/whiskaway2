@@ -53,7 +53,7 @@ function GetStarted() {
               />
             </div>
             <img
-              src="/recipes.jpg"
+              src="/recipes.JPG"
               alt="Recipe Searching"
               className="w-full h-64 object-cover object-top rounded-lg flex-shrink-0"
             />
