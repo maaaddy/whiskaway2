@@ -18,7 +18,13 @@ const SkeletonCard = ({ delay = 0 }) => (
 const isValidImage = (image) => {
   if (!image) return false;
   if (image.startsWith('data:')) return true;
-  return /\.(jpe?g|png|gif|bmp|webp)$/i.test(image);
+
+  try {
+    new URL(image);
+    return true;
+  } catch (err) {
+    return false;
+  }
 };
 
 function HomePage({ searchQuery, recipeFilter }) {
@@ -52,9 +58,19 @@ function HomePage({ searchQuery, recipeFilter }) {
     setUserLoading(true);
     axios.get('/api/public-recipes', { withCredentials: false, headers: { 'Accept': 'application/json' } })
       .then(res => {
-        const validUsers = res.data.filter(r => isValidImage(r.image));
-     setUserRecipes(validUsers);
-     setFilteredUserRecipes(applyUserFilters(validUsers));
+        const normalized = res.data.map(r => {
+          const raw = r.image || '';
+          const isRawBase64 = /^[A-Za-z0-9+/]+={0,2}$/.test(raw);
+          return {
+            ...r,
+            image: isRawBase64
+              ? `data:image/jpeg;base64,${raw}`
+              : raw
+          };
+        });
+        const validUsers = normalized.filter(r => isValidImage(r.image));
+        setUserRecipes(validUsers);
+        setFilteredUserRecipes(applyUserFilters(validUsers));
       })
       .catch(err => console.error('Error fetching public recipes:', err))
       .finally(() => setUserLoading(false));
@@ -102,7 +118,7 @@ function HomePage({ searchQuery, recipeFilter }) {
             else setHasMore(false);
           }
         }
-        
+
         results = results.filter(r => isValidImage(r.image));
         setSpoonacularRecipes(prev => page === 1 ? results : [...prev, ...results]);
       } catch (err) {
@@ -159,24 +175,22 @@ function HomePage({ searchQuery, recipeFilter }) {
                     className="relative cursor-pointer"
                     onClick={() => setSelectedId(r.id || r._id)}
                   >
-                      <img
-                        src={
-                          r.image
-                            ? (r.image.startsWith('http')
-                              ? r.image
-                              : `data:image/jpeg;base64,${r.image}`)
-                            : ''
-                        }
-                        alt={r.title}
-                        className="w-full h-48 object-cover rounded-2xl"
-                      />
-                      <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-25 transition-opacity rounded-2xl" />
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <h3 className="text-white text-lg font-semibold text-center px-2">{r.title}</h3>
-                      </div>
+                    <img
+                      src={r.image}
+                      alt={r.title}
+                      className="w-full h-48 object-cover rounded-2xl"
+                      onError={e => {
+                        const card = e.currentTarget.closest('.recipe-card');
+                        if (card) card.style.display = 'none';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-25 transition-opacity rounded-2xl" />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <h3 className="text-white text-lg font-semibold text-center px-2">{r.title}</h3>
                     </div>
                   </div>
                 </div>
+              </div>
             ))
             : <p>No recipes found. Try adjusting your search or filters!</p>
         }
