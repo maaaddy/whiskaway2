@@ -18,10 +18,9 @@ const SkeletonCard = ({ delay = 0 }) => (
 const isValidImage = (image) => {
   if (!image) return false;
   if (image.startsWith('data:')) return true;
-
   try {
-    new URL(image);
-    return true;
+    const url = new URL(image);
+    return /\.(jpe?g|png|gif|bmp|webp)(\?.*)?$/i.test(url.pathname);
   } catch (err) {
     return false;
   }
@@ -63,14 +62,13 @@ function HomePage({ searchQuery, recipeFilter }) {
           const isRawBase64 = /^[A-Za-z0-9+/]+={0,2}$/.test(raw);
           return {
             ...r,
-            image: isRawBase64
-              ? `data:image/jpeg;base64,${raw}`
-              : raw
+            image: isRawBase64 ? `data:image/jpeg;base64,${raw}` : raw
           };
         });
         const validUsers = normalized.filter(r => isValidImage(r.image));
-        setUserRecipes(validUsers);
-        setFilteredUserRecipes(applyUserFilters(validUsers));
+        const shuffled = validUsers.sort(() => Math.random() - 0.5);
+        setUserRecipes(shuffled);
+        setFilteredUserRecipes(applyUserFilters(shuffled));
       })
       .catch(err => console.error('Error fetching public recipes:', err))
       .finally(() => setUserLoading(false));
@@ -83,18 +81,15 @@ function HomePage({ searchQuery, recipeFilter }) {
   useEffect(() => {
     if (userLoading) return;
     setApiLoading(true);
-
     const fetchAPI = async () => {
       try {
         let results = [];
         if (!isFiltered() && page === 1) {
           const tags = [];
-          if (recipeFilter.type)      tags.push(...recipeFilter.type.split(','));
-          if (recipeFilter.cuisine)   tags.push(...recipeFilter.cuisine.split(','));
-          if (recipeFilter.diet)      tags.push(...recipeFilter.diet.split(','));
-          const params = { apiKey: API_KEY, number: 24 };
-          if (tags.length) params.tags = tags.join(',');
-          const { data } = await axios.get('https://api.spoonacular.com/recipes/random', { params });
+          if (recipeFilter.type) tags.push(...recipeFilter.type.split(','));
+          if (recipeFilter.cuisine) tags.push(...recipeFilter.cuisine.split(','));
+          if (recipeFilter.diet) tags.push(...recipeFilter.diet.split(','));
+          const { data } = await axios.get('https://api.spoonacular.com/recipes/random', { params: { apiKey: API_KEY, number: 24, tags: tags.join(',') } });
           results = data.recipes;
         } else {
           const cacheKey = `recipes-${searchQuery}-${JSON.stringify(recipeFilter)}-page-${page}`;
@@ -102,32 +97,21 @@ function HomePage({ searchQuery, recipeFilter }) {
           if (cached) {
             results = JSON.parse(cached);
           } else {
-            const params = {
-              apiKey: API_KEY,
-              number: 24,
-              offset: (page - 1) * 24,
-              query: searchQuery || '',
-              ...(recipeFilter.type         && { type: recipeFilter.type }),
-              ...(recipeFilter.cuisine      && { cuisine: recipeFilter.cuisine }),
-              ...(recipeFilter.diet         && { diet: recipeFilter.diet }),
-              ...(recipeFilter.intolerances && { intolerances: recipeFilter.intolerances }),
-            };
+            const params = { apiKey: API_KEY, number: 24, offset: (page - 1) * 24, query: searchQuery || '', ...(recipeFilter.type && { type: recipeFilter.type }), ...(recipeFilter.cuisine && { cuisine: recipeFilter.cuisine }), ...(recipeFilter.diet && { diet: recipeFilter.diet }), ...(recipeFilter.intolerances && { intolerances: recipeFilter.intolerances }) };
             const { data } = await axios.get('https://api.spoonacular.com/recipes/complexSearch', { params });
             results = data.results;
-            if (results.length) sessionStorage.setItem(cacheKey, JSON.stringify(results));
-            else setHasMore(false);
+            if (!results.length) setHasMore(false);
+            sessionStorage.setItem(cacheKey, JSON.stringify(results));
           }
         }
-
-        results = results.filter(r => isValidImage(r.image));
-        setSpoonacularRecipes(prev => page === 1 ? results : [...prev, ...results]);
+        const validAPI = results.filter(r => isValidImage(r.image));
+        setSpoonacularRecipes(prev => page === 1 ? validAPI : [...prev, ...validAPI]);
       } catch (err) {
         console.error('Error fetching Spoonacular:', err);
       } finally {
         setApiLoading(false);
       }
     };
-
     fetchAPI();
   }, [page, searchQuery, recipeFilter, userLoading]);
 
@@ -154,10 +138,12 @@ function HomePage({ searchQuery, recipeFilter }) {
     });
     return mixed;
   };
+
   const allRecipes = mixRecipes(filteredUserRecipes, spoonacularRecipes);
+  const validAll = allRecipes.filter(r => isValidImage(r.image));
 
   const DISPLAY_COUNT = 24;
-  const displayedRecipes = allRecipes.slice(0, DISPLAY_COUNT * page);
+  const displayedRecipes = validAll.slice(0, DISPLAY_COUNT * page);
 
   const initialLoading = userLoading || (apiLoading && page === 1);
   const skeletonCount = DISPLAY_COUNT;
@@ -171,19 +157,8 @@ function HomePage({ searchQuery, recipeFilter }) {
             ? displayedRecipes.map(r => (
               <div key={r.id || r._id} className="hovering group">
                 <div className="recipe-card">
-                  <div
-                    className="relative cursor-pointer"
-                    onClick={() => setSelectedId(r.id || r._id)}
-                  >
-                    <img
-                      src={r.image}
-                      alt={r.title}
-                      className="w-full h-48 object-cover rounded-2xl"
-                      onError={e => {
-                        const card = e.currentTarget.closest('.recipe-card');
-                        if (card) card.style.display = 'none';
-                      }}
-                    />
+                  <div className="relative cursor-pointer" onClick={() => setSelectedId(r.id || r._id)}>
+                    <img src={r.image} alt={r.title} className="w-full h-48 object-cover rounded-2xl" />
                     <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-25 transition-opacity rounded-2xl" />
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <h3 className="text-white text-lg font-semibold text-center px-2">{r.title}</h3>
