@@ -124,16 +124,21 @@ function CookbookDetailPage() {
 
   const downloadPdf = async () => {
     const doc = new jsPDF('p', 'pt', 'a4');
+    doc.setFont('times', 'normal');
     const margin = 40;
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
     const logoWidth = 40;
     const logoHeight = 40;
     const headerHeight = logoHeight + 10;
+    const extraHeaderSpacing = 20;
     const lineSpacing = 16;
     const logoUrl = '/whiskaway.png';
+    const labelText = 'WhiskAway';
+    const urlText = 'https://whiskaway.food';
+    const fontSizeHeader = 14;
   
-    const loadImage = (url) =>
+    const loadImage = url =>
       new Promise((resolve, reject) => {
         const img = new Image();
         img.crossOrigin = 'anonymous';
@@ -144,43 +149,52 @@ function CookbookDetailPage() {
     const img = await loadImage(logoUrl);
   
     const drawHeader = () => {
-      doc.addImage(img, 'PNG', margin, margin - 10, logoWidth, logoHeight);
-      doc.setFontSize(10);
-      doc.text(
-        'WhiskAway: https://whiskaway.food',
-        margin + logoWidth + 10,
-        margin + logoHeight / 2 + 4
-      );
+      doc.setFontSize(fontSizeHeader);
+      const logoX = margin;
+      const logoY = margin - 5;
+      doc.addImage(img, 'PNG', logoX, logoY, logoWidth, logoHeight);
+  
+      const centerY = logoY + logoHeight / 2;
+      const textY = centerY + fontSizeHeader / 2 - 2;
+  
+      const labelX = logoX + logoWidth + 10;
+      doc.text(labelText, labelX, textY, { align: 'left' });
+  
+      const urlWidth = doc.getTextWidth(urlText);
+      const urlX = pageWidth - margin - urlWidth;
+      doc.text(urlText, urlX, textY, { align: 'left' });
     };
   
-    let y = margin + headerHeight;
+    let y = margin + headerHeight + extraHeaderSpacing;
     drawHeader();
   
     recipes.forEach((recipe, idx) => {
       if (idx > 0) {
         doc.addPage();
         drawHeader();
-        y = margin + headerHeight;
+        y = margin + headerHeight + extraHeaderSpacing;
       }
   
       if (y + 24 > pageHeight - margin) {
         doc.addPage();
         drawHeader();
-        y = margin + headerHeight;
+        y = margin + headerHeight + extraHeaderSpacing;
       }
+      doc.setFont('times', 'bold');
       doc.setFontSize(18);
       doc.text(recipe.title, margin, y);
       y += 24;
   
+      doc.setFont('times', 'normal');
       doc.setFontSize(14);
       if (y + lineSpacing > pageHeight - margin) {
         doc.addPage();
         drawHeader();
-        y = margin + headerHeight;
+        y = margin + headerHeight + extraHeaderSpacing;
       }
       doc.text('Ingredients:', margin, y);
       y += lineSpacing;
-  
+
       const ingredients = recipe.extendedIngredients
         ? recipe.extendedIngredients.map(i => i.original)
         : recipe.ingredients || [];

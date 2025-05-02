@@ -465,20 +465,23 @@ function ProfilePage() {
                       </p>
                     )}
                     <p className="text-gray-700 pt-1">
-  {loading ? (
-    <span className="inline-block h-4 w-24 bg-gray-200 rounded-lg animate-pulse" />
-  ) : loadingFriends ? (
-    '---'
-  ) : (
-    <Link
-      to="/settings?tab=manageFriends"
-      className="text-teal-600 hover:underline"
-    >
-      {friendCount} friend{friendCount !== 1 ? 's' : ''}
-    </Link>
-  )}
-</p>
-
+                    {loading ? (
+                      <span className="inline-block h-4 w-24 bg-gray-200 rounded-lg animate-pulse" />
+                    ) : loadingFriends ? (
+                      '---'
+                    ) : currentUser === userData?.username ? (
+                      <Link
+                        to="/settings?tab=manageFriends"
+                        className="text-teal-600 hover:underline"
+                      >
+                        {friendCount} friend{friendCount !== 1 ? 's' : ''}
+                      </Link>
+                    ) : (
+                      <span>
+                        {friendCount} friend{friendCount !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </p>
                     <div className="flex gap-3 mt-3">
                       <button
                         onClick={copyProfileLink}

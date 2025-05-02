@@ -65,7 +65,7 @@ function App() {
                 <Routes>
                     {isLoggedIn ? ( 
                         <>
-                            <Route path="/admin/" element={<Ojofrdkcvbfzdubabiszbvfdjnbduipw />} />
+                            
                             <Route path="/" element={<HomePage searchQuery={searchQuery} recipeFilter={recipeFilter} />} />
                             <Route path="/recipe/:id" element={<RecipeDetailPage />} />
                             <Route path="/add-recipe" element={<RecipePage />} />

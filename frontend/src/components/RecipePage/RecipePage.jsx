@@ -6,7 +6,6 @@ import { FaLock, FaLockOpen, FaPlus, FaTrash } from 'react-icons/fa';
 import Modal from '../Modal';
 import RecipeDetailPage from '../RecipeDetailPage/RecipeDetailPage';
 
-
 const mealTypeOptions = [
   { value: 'main course', label: 'Main Course' },
   { value: 'side dish', label: 'Side Dish' },

@@ -295,10 +295,6 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
             <div className="flex items-center space-x-5 text-teal-700 flex-shrink-0">
             
                 <>
-                <Link to="/admin" className="hover:text-gray-700 transition">
-                    <FontAwesomeIcon icon={faShield} size="lg" />
-                </Link>
-
                 <div className="relative">
                     <button
                     onClick={() => setShowNotifications(v => !v)}

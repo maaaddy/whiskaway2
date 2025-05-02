@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import TopBar from '../TopBar/TopBar';
 
 function AdminPage() {
   const [users, setUsers] = useState([]);
@@ -75,9 +74,7 @@ function AdminPage() {
 
   return (
     <>
-      <TopBar />
-
-      <main className="min-h-screen bg-gray-50 pt-24 pb-12 font-serif">
+      <main className="min-h-screen bg-[#f2faf9] pt-24 pb-12 font-serif">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <section className="mb-12 pb-12 border-b-2">
             <h2 className="text-2xl font-serif font-semibold text-teal-700 text-center mb-8">
