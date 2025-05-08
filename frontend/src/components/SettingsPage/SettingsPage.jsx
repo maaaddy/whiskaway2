@@ -135,7 +135,7 @@ const SettingsPage = () => {
     <div className="flex pt-12 min-h-screen font-serif">
       <Toaster position='top-right' />
 
-      <div className="flex flex-col gap-2 w-64 px-4 pt-4 shadow-md bg-white">
+      <div className="flex flex-col gap-2 w-32 h-full-screen md:w-64 px-4 pt-4 shadow-md bg-white">
         {[
           { key: 'username', label: 'Change Username' },
           { key: 'password', label: 'Change Password' },

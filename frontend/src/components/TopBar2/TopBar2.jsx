@@ -6,7 +6,7 @@ export default function TopBar2() {
     <div className="fixed w-full bg-white backdrop-blur-md shadow-sm py-1 px-6 flex items-center justify-between z-50">
       <Link to="/" className="flex items-center space-x-3">
         <img src="/whiskaway.png" alt="Logo" className="w-9 h-auto" />
-        <span className="text-xl text-teal-700 font-semibold font-serif">
+        <span className="text-xl text-teal-700 font-semibold font-serif hidden md:block">
           WhiskAway
         </span>
       </Link>
@@ -14,13 +14,13 @@ export default function TopBar2() {
       <div className="flex items-center space-x-4">
         <Link
           to="/login"
-          className="px-4 py-2 bg-teal-100 text-teal-700 font-semibold hover:bg-teal-200 rounded-full"
+          className="px-4 py-2 bg-teal-100 text-teal-700 font-semibold hover:bg-teal-200 rounded-full w-24 text-center"
         >
           Log In
         </Link>
         <Link
           to="/signup"
-          className="px-4 py-2 bg-teal-700 text-white font-semibold rounded-full hover:bg-teal-600"
+          className="px-4 py-2 bg-teal-700 text-white font-semibold rounded-full hover:bg-teal-600 w-24 text-center"
         >
           Sign Up
         </Link>

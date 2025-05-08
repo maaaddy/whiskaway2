@@ -80,7 +80,7 @@ function CookbookPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
             {[...Array(8)].map((_, idx) => (
               <div key={idx} className="animate-pulse space-y-4">
-                <div className="h-64 bg-gray-200 rounded-lg" />
+                <div className="h-52 w-40 md:h-64 md:w-52 bg-gray-200 rounded-lg" />
               </div>
             ))}
           </div>
@@ -89,7 +89,7 @@ function CookbookPage() {
             {cookbooks.map((cookbook) => (
               <div
                 key={cookbook._id}
-                className="relative rounded-lg overflow-hidden shadow hover:shadow-lg transition group h-64 w-52"
+                className="relative rounded-lg overflow-hidden shadow hover:shadow-lg transition group h-52 w-40 md:h-64 md:w-52"
               >
                 <Link to={`/cookbook/${cookbook._id}`} className="block w-full h-64">
                   <img

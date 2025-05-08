@@ -193,7 +193,7 @@ function TopBar({ searchQuery, setSearchQuery, setRecipeFilter, onLogout }) {
         <div className="fixed w-full bg-white backdrop-blur-md shadow-sm px-6 flex h-12 py-1 items-center justify-between z-50">
             <Link to="/" className="flex items-center space-x-3">
                 <img src="/whiskaway.png" alt="Logo" className="w-9 h-auto" />
-                <span className="text-xl text-teal-700 font-semibold font-serif">
+                <span className="text-xl text-teal-700 font-semibold font-serif hidden md:block">
                     WhiskAway
                 </span>
             </Link>

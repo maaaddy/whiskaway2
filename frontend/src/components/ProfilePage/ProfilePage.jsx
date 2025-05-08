@@ -561,18 +561,28 @@ function ProfilePage() {
 
           <div className="w-full px-4">
           {isLoadingItems ? (
-            <div className="flex gap-4">
+            <ScrollMenu
+              LeftArrow={<LeftArrow show={showArrows} />}
+              RightArrow={<RightArrow show={showArrows} />}
+            >
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="translate-x-10 w-[260px] h-[300px] bg-gray-200 rounded-xl animate-pulse" />
+                <div
+                  key={i}
+                  itemID={`loading-${i}`}
+                  className="relative mx-2 h-52 w-40 md:h-64 md:w-52 bg-gray-200 rounded-xl animate-pulse"
+                />
               ))}
-            </div>
+            </ScrollMenu>
           ) : items.length > 0 ? (
-            <ScrollMenu LeftArrow={<LeftArrow show={showArrows} />} RightArrow={<RightArrow show={showArrows}/>}>
+            <ScrollMenu
+              LeftArrow={<LeftArrow show={showArrows} />}
+              RightArrow={<RightArrow show={showArrows} />}
+            >
               {items.map((item) => (
                 <div
                   key={item._id}
                   itemID={item._id}
-                  className="relative mx-2 w-[260px] h-[300px] rounded-xl overflow-hidden shadow hover:shadow-xl transition group bg-white"
+                  className="relative mx-2 h-52 w-40 md:h-64 md:w-52 rounded-xl overflow-hidden shadow hover:shadow-xl transition group bg-white"
                 >
                   <Link
                     to={`/${viewTab === 'cookbooks' ? 'cookbook' : 'recipe'}/${item._id}`}

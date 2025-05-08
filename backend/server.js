@@ -466,21 +466,7 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-const requireAdmin = async (req, res, next) => {
-  try {
-    const user = await User.findById(req.userId);
-    if (!user) return res.status(401).json({ error: 'Unauthorized' });
-    if (user.username !== process.env.ADMIN) {
-      return res.status(403).json({ error: 'Forbidden: Admins only' });
-    }
-    next();
-  } catch (err) {
-    console.error('Admin check error:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-};
-
-app2.use('/admin', verifyToken, requireAdmin);
+app2.use('/admin', verifyToken);
 
 app2.get('/admin/users', async (req, res) => {
   const { query } = req.query;

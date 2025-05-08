@@ -368,7 +368,7 @@ function CookbookDetailPage() {
                 {isOwner && (
                   <button
                     onClick={() => handleRemoveRecipe(recipe.id)}
-                    className="absolute top-2 right-2 bg-white/80 text-gray-500 hover:text-red-600 p-2 rounded-full z-10 opacity-0 group-hover:opacity-100 transition"
+                    className="absolute top-2 right-2 bg-white/80 text-gray-500 hover:text-red-600 p-2 rounded-full z-50 opacity-0 group-hover:opacity-100 transition"
                     title="Remove from cookbook"
                   >
                     <FaTrash />

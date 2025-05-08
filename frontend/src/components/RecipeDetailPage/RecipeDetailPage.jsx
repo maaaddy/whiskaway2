@@ -322,7 +322,7 @@ function RecipeDetailPage({ recipeId }) {
             </div>
 
             <div className="flex justify-between items-start flex-col sm:flex-row sm:items-center gap-4 mb-4">
-                <div className="flex-1 border-r-2 border-gray-200">
+                <div className="flex-1 md:border-r-2 border-gray-200">
                     <h1 className="text-4xl font-bold text-gray-900 mb-1 mr-1">{recipe.title}</h1>
                     <p className="text-sm text-gray-600">
                         {recipe.servings && <>Serves {recipe.servings} • </>}
@@ -356,84 +356,102 @@ function RecipeDetailPage({ recipeId }) {
                         )}
                     </p>
                 </div>
-                <div className="relative flex gap-2 items-center sm:self-start">
-
+                <div
+                className="
+                    relative
+                    flex flex-wrap gap-2
+                    sm:flex-nowrap sm:items-center
+                "
+                >
+                <div className="order-1 sm:order-2 sm:w-auto flex gap-2">
+                    <select
+                    value={selectedCookbook}
+                    onChange={e => setSelectedCookbook(e.target.value)}
+                    className="
+                        flex-1 sm:px-1 px-3 py-2 rounded-3xl bg-white hover:bg-gray-200 text-gray-800 text-xs md:text-base
+                    "
+                    >
+                    <option value="">Add to Cookbook</option>
+                    {cookbooks.map(cb => (
+                        <option key={cb._id} value={cb._id}>{cb.title}</option>
+                    ))}
+                    </select>
                     <button
-                        onClick={handleLike}
-                        className="flex items-center gap-1 text-lg hover:opacity-75 transition"
-                        >
-                        <FontAwesomeIcon
-                            icon={isLiked ? heartSolid : heartOutline}
-                            className={isLiked ? "text-red-500" : "text-gray-500"}
-                        />
-                        <span>{likeCount}</span>
+                    onClick={handleAddToCookbook}
+                    className="
+                        bg-teal-600 hover:bg-teal-700 text-white
+                         px-3 md:px-3 py-0 md:py-2 rounded-full text-sm
+                    "
+                    >
+                    <FontAwesomeIcon icon={faPlus} className="text-md md:text-xl" />
                     </button>
 
-                    <div className="relative">
-                        <select
-                            value={selectedCookbook}
-                            onChange={(e) => setSelectedCookbook(e.target.value)}
-                            className=" text-gray-800 mx-2 px-3 py-2 rounded-3xl bg-white hover:bg-gray-200"
-                        >
-                            <option value="" className='bg-white'>Select a Cookbook</option>
-                            {cookbooks.map((cookbook) => (
-                                <option key={cookbook._id} value={cookbook._id} className='bg-white'>
-                                    {cookbook.title}
-                                </option>
-                            ))}
-                        </select>
+                    <button
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded-full"
+                    onClick={() => {
+                        setShowShareOptions(prev => !prev);
+                        setShowFriendList(false);
+                    }}
+                    >
+                    <FontAwesomeIcon icon={faPaperPlane} className="text-md md:text-xl" />
+                    </button>
+                </div>
+
+                <button
+                    onClick={handleLike}
+                    className="
+                    order-2 w-4 md:w-auto
+                    flex items-center gap-1 text-lg
+                    hover:opacity-75 transition
+                    sm:order-1
+                    "
+                >
+                    <FontAwesomeIcon
+                    icon={isLiked ? heartSolid : heartOutline}
+                    className={isLiked ? "text-red-500" : "text-gray-500"}
+                    />
+                    <span>{likeCount}</span>
+                </button>
+
+                <div
+                    className="
+                    order-2 w-auto
+                    relative
+                    sm:order-3
+                    "
+                >
+                    {showShareOptions && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white border rounded-md shadow-lg z-10">
                         <button
-                            onClick={handleAddToCookbook}
-                            className="bg-teal-600 hover:bg-teal-700 text-white px-3 py-2 rounded-3xl text-sm"
+                        onClick={handleCopyLink}
+                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                         >
-                            <FontAwesomeIcon icon={faPlus} size="lg" />
+                        📋 Copy Link
+                        </button>
+                        <button
+                        onClick={() => {
+                            setShowFriendList(true);
+                            setShowShareOptions(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                        >
+                        💬 Friends
                         </button>
                     </div>
+                    )}
 
-                    <div className="relative">
-                        <button
-                            className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded-3xl"
-                            onClick={() => {
-                                setShowShareOptions((prev) => !prev);
-                                setShowFriendList(false);
-                            }}
-                        >
-                            <FontAwesomeIcon icon={faPaperPlane} size="lg" />
-                        </button>
-
-                        {showShareOptions && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
-                                <button
-                                    onClick={handleCopyLink}
-                                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                                >
-                                    📋 Copy Link
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setShowFriendList(true);
-                                        setShowShareOptions(false);
-                                    }}
-                                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                                >
-                                    💬 Friends
-                                </button>
-                            </div>
-                        )}
-                    </div>
                     {showFriendList && (
-                    <div className="absolute top-full mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg z-20">
+                    <div className="absolute top-full mt-2 w-56 bg-white border rounded-md shadow-lg z-20">
                         <div className="px-4 py-2 text-sm font-medium text-gray-700 border-b">
                         Select a friend
                         </div>
                         {friends.length > 0 ? (
-                        friends.map((friend) => (
+                        friends.map(friend => (
                             <button
                             key={friend._id}
                             onClick={() => {
                                 const shareUrl = `${window.location.origin}/recipe/${id}`;
                                 sessionStorage.setItem('sendRecipeLink', shareUrl);
-
                                 window.dispatchEvent(
                                 new CustomEvent('openChat', { detail: { userId: friend._id } })
                                 );
@@ -451,6 +469,7 @@ function RecipeDetailPage({ recipeId }) {
                     )}
                 </div>
             </div>
+        </div>  
 
             <div className="bg-white p-6 rounded-xl shadow mb-6">
                 <h2 className="text-2xl font-semibold text-gray-800 mb-4"><FontAwesomeIcon icon={faSeedling} size="md" className='text-teal-700' /> Ingredients</h2>

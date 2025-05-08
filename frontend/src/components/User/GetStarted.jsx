@@ -63,7 +63,7 @@ function GetStarted() {
 
 
       <div className="justify-center text-center py-2">
-        <p className="text-md font-thin text-teal-900">
+        <p className="text-md font-thin text-teal-900 md:mx-0 mx-8">
           Allergies? Dieting? No problem. Filter through recipes by type.
         </p>
       </div>
